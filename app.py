@@ -59,42 +59,60 @@ if df.empty:
     st.error("No valid loan records found.")
     st.stop()
 
+
 # --------------------------------
 # SIDEBAR FILTERS
 # --------------------------------
 
-st.sidebar.header("Dashboard Filters")
+st.sidebar.title("Dashboard Filters")
 
-banks = sorted(df["Bank Name"].dropna().unique())
-loan_types = sorted(df["Type of Loan"].dropna().unique())
-statuses = sorted(df["Status"].dropna().unique())
-executives = sorted(df["Executive Name"].dropna().unique())
+st.sidebar.subheader("Select Bank")
 
-selected_banks = st.sidebar.multiselect(
-    "Select Bank",
-    banks,
-    default=banks
+selected_bank = st.sidebar.multiselect(
+    "Bank Name",
+    options=sorted(df["Bank Name"].dropna().unique()),
+    default=sorted(df["Bank Name"].dropna().unique())
 )
 
-selected_loans = st.sidebar.multiselect(
-    "Select Loan Type",
-    loan_types,
-    default=loan_types
+st.sidebar.subheader("Loan Details")
+
+selected_loan = st.sidebar.multiselect(
+    "Type of Loan",
+    options=sorted(df["Type of Loan"].dropna().unique()),
+    default=sorted(df["Type of Loan"].dropna().unique())
 )
 
 selected_status = st.sidebar.multiselect(
-    "Select Status",
-    statuses,
-    default=statuses
+    "Application Status",
+    options=sorted(df["Status"].dropna().unique()),
+    default=sorted(df["Status"].dropna().unique())
 )
 
-selected_executives = st.sidebar.multiselect(
-    "Select Executive",
-    executives,
-    default=executives
+st.sidebar.subheader("Executive")
+
+selected_executive = st.sidebar.multiselect(
+    "Executive Name",
+    options=sorted(df["Executive Name"].dropna().unique()),
+    default=sorted(df["Executive Name"].dropna().unique())
 )
 
-search = st.sidebar.text_input("Search Customer")
+st.sidebar.subheader("Date Filter")
+
+min_date = df["Date"].min().date()
+max_date = df["Date"].max().date()
+
+selected_dates = st.sidebar.date_input(
+    "Select Date Range",
+    value=(min_date, max_date),
+    min_value=min_date,
+    max_value=max_date
+)
+
+# Customer Search
+st.sidebar.subheader("Search")
+
+search = st.sidebar.text_input("Customer Name")
+
 
 # --------------------------------
 # APPLY FILTERS
