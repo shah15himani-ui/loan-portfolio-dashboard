@@ -97,16 +97,18 @@ st.html("""
 
 
 # =========================================================
-# 3. DATA CLEANING
+# 3. DATA CLEANING FUNCTION
 # =========================================================
 
 def clean_loan_data(data):
 
     data = data.copy()
 
+    # Remove completely empty rows and columns
     data = data.dropna(axis=1, how="all")
     data = data.dropna(axis=0, how="all")
 
+    # Clean column names
     data.columns = data.columns.astype(str).str.strip()
 
     required_columns = [
@@ -130,6 +132,7 @@ def clean_loan_data(data):
             + ", ".join(missing_columns)
         )
 
+    # Clean text columns
     text_columns = [
         "Customer Name",
         "Type of Loan",
@@ -139,6 +142,7 @@ def clean_loan_data(data):
     ]
 
     for col in text_columns:
+
         data[col] = (
             data[col]
             .fillna("Unknown")
@@ -146,6 +150,7 @@ def clean_loan_data(data):
             .str.strip()
         )
 
+    # Convert loan amount to numeric
     data["Loan Amount"] = (
         data["Loan Amount"]
         .astype(str)
@@ -160,19 +165,21 @@ def clean_loan_data(data):
         errors="coerce"
     )
 
+    # Convert dates
     data["Date"] = pd.to_datetime(
         data["Date"],
         errors="coerce",
         dayfirst=True
     )
 
+    # Remove invalid records
     data = data.dropna(
         subset=["Loan Amount", "Date"]
     )
 
     if data.empty:
         raise ValueError(
-            "No valid loan records found in the uploaded Excel file."
+            "No valid loan records found in the Excel file."
         )
 
     return data
@@ -183,6 +190,7 @@ def clean_loan_data(data):
 # =========================================================
 
 def format_crore(amount):
+
     return f"₹{amount / 10000000:.2f} Cr"
 
 
@@ -292,7 +300,7 @@ if "loan_df" not in st.session_state:
     </div>
     """)
 
-    # Center upload card
+    # Center upload section
     left, center, right = st.columns([1, 1.7, 1])
 
     with center:
@@ -383,6 +391,7 @@ if "loan_df" not in st.session_state:
 
 df = st.session_state["loan_df"].copy()
 
+# Additional date fields
 df["Year"] = df["Date"].dt.year
 
 df["Month Sort"] = df["Date"].dt.to_period("M")
@@ -394,15 +403,72 @@ df["Month Year"] = df["Month Sort"].astype(str)
 # 7. SIDEBAR
 # =========================================================
 
-st.sidebar.title("📊 Loan Analytics")
+st.sidebar.markdown(
+    """
+    <div style="padding:10px 0 15px;">
+
+        <div style="
+            color:#2563EB;
+            font-size:12px;
+            font-weight:700;
+            letter-spacing:1.5px;
+        ">
+            LOAN PORTFOLIO
+        </div>
+
+        <h2 style="
+            color:#172B4D;
+            font-size:23px;
+            margin-top:5px;
+        ">
+            Analytics
+        </h2>
+
+    </div>
+    """,
+    unsafe_allow_html=True
+)
 
 st.sidebar.caption(
-    st.session_state.get("loan_filename", "Uploaded file")
+    "File: " + st.session_state.get(
+        "loan_filename",
+        "Uploaded file"
+    )
 )
 
 st.sidebar.divider()
 
-st.sidebar.markdown("### Data Management")
+st.sidebar.markdown("### Dashboard Filters")
+
+
+# =========================================================
+# 8. RESET FILTERS
+# =========================================================
+
+def reset_filters():
+
+    for key in [
+        "bank_filter",
+        "loan_filter",
+        "status_filter",
+        "executive_filter",
+        "customer_search",
+        "date_filter"
+    ]:
+
+        st.session_state.pop(key, None)
+
+
+st.sidebar.button(
+    "↻ Reset Filters",
+    use_container_width=True,
+    on_click=reset_filters
+)
+
+
+# =========================================================
+# 9. UPLOAD ANOTHER FILE
+# =========================================================
 
 if st.sidebar.button(
     "⬆ Upload Another File",
@@ -416,92 +482,13 @@ if st.sidebar.button(
     st.rerun()
 
 
-# =========================================================
-# 8. DASHBOARD HEADER
-# =========================================================
-
-st.html("""
-<div style="margin-bottom: 22px;">
-
-    <div style="
-        color: #2563EB;
-        font-size: 12px;
-        font-weight: 700;
-        letter-spacing: 1.5px;
-        margin-bottom: 8px;
-    ">
-        LOAN PORTFOLIO MANAGEMENT
-    </div>
-
-    <h1 style="
-        color: #172B4D;
-        font-size: 32px;
-        margin: 0;
-    ">
-        Loan Portfolio Dashboard
-    </h1>
-
-    <p style="
-        color: #718096;
-        font-size: 14px;
-        margin-top: 8px;
-    ">
-        Monitor applications, loan amounts and portfolio performance.
-    </p>
-
-</div>
-""")
+st.sidebar.divider()
 
 
 # =========================================================
-# 9. TOP FILTER BAR
+# 10. FILTER OPTIONS
 # =========================================================
 
-def reset_filters():
-
-    for key in [
-        "bank_filter",
-        "loan_filter",
-        "status_filter",
-        "executive_filter",
-        "customer_search",
-        "date_filter"
-    ]:
-        st.session_state.pop(key, None)
-
-
-# Filter bar heading
-st.html("""
-<div style="
-    background: #FFFFFF;
-    border: 1px solid #E5EAF1;
-    border-radius: 14px;
-    padding: 18px 20px 5px;
-    margin-bottom: 10px;
-">
-
-    <div style="
-        color: #172B4D;
-        font-size: 17px;
-        font-weight: 700;
-    ">
-        Dashboard Filters
-    </div>
-
-    <div style="
-        color: #94A3B8;
-        font-size: 12px;
-        margin-top: 5px;
-        margin-bottom: 10px;
-    ">
-        Select filters to customize your dashboard analytics.
-    </div>
-
-</div>
-""")
-
-
-# Filter options
 bank_options = (
     ["All Banks"]
     + sorted(df["Bank Name"].unique().tolist())
@@ -523,83 +510,65 @@ executive_options = (
 )
 
 
-# First filter row
-filter1, filter2, filter3, filter4 = st.columns(4)
-
-with filter1:
-
-    selected_bank = st.selectbox(
-        "Bank Name",
-        bank_options,
-        key="bank_filter"
-    )
-
-with filter2:
-
-    selected_loan = st.selectbox(
-        "Type of Loan",
-        loan_options,
-        key="loan_filter"
-    )
-
-with filter3:
-
-    selected_status = st.selectbox(
-        "Application Status",
-        status_options,
-        key="status_filter"
-    )
-
-with filter4:
-
-    selected_executive = st.selectbox(
-        "Executive Name",
-        executive_options,
-        key="executive_filter"
-    )
+# Bank filter
+selected_bank = st.sidebar.selectbox(
+    "Bank Name",
+    bank_options,
+    key="bank_filter"
+)
 
 
-# Second filter row
-filter5, filter6, filter7 = st.columns([2, 2, 1])
+# Loan type filter
+selected_loan = st.sidebar.selectbox(
+    "Type of Loan",
+    loan_options,
+    key="loan_filter"
+)
 
+
+# Status filter
+selected_status = st.sidebar.selectbox(
+    "Application Status",
+    status_options,
+    key="status_filter"
+)
+
+
+# Executive filter
+selected_executive = st.sidebar.selectbox(
+    "Executive Name",
+    executive_options,
+    key="executive_filter"
+)
+
+
+# Date filter
 min_date = df["Date"].min().date()
 max_date = df["Date"].max().date()
 
-with filter5:
+selected_dates = st.sidebar.date_input(
+    "Date Range",
+    value=(min_date, max_date),
+    min_value=min_date,
+    max_value=max_date,
+    key="date_filter"
+)
 
-    selected_dates = st.date_input(
-        "Date Range",
-        value=(min_date, max_date),
-        min_value=min_date,
-        max_value=max_date,
-        key="date_filter"
-    )
 
-with filter6:
-
-    customer_search = st.text_input(
-        "Search Customer",
-        placeholder="Enter customer name...",
-        key="customer_search"
-    )
-
-with filter7:
-
-    st.write("")
-    st.write("")
-
-    st.button(
-        "↻ Reset Filters",
-        use_container_width=True,
-        on_click=reset_filters
-    )
+# Customer search
+customer_search = st.sidebar.text_input(
+    "Search Customer",
+    placeholder="Enter customer name...",
+    key="customer_search"
+)
 
 
 # =========================================================
-# 10. APPLY FILTERS
+# 11. APPLY FILTERS
 # =========================================================
 
 filtered_df = df.copy()
+
 
 if selected_bank != "All Banks":
 
@@ -652,7 +621,44 @@ if customer_search:
 
 
 # =========================================================
-# 11. FILTERED DATA VALIDATION
+# 12. DASHBOARD HEADER
+# =========================================================
+
+st.html("""
+<div style="margin-bottom:25px;">
+
+    <div style="
+        color:#2563EB;
+        font-size:12px;
+        font-weight:700;
+        letter-spacing:1.5px;
+        margin-bottom:8px;
+    ">
+        OVERVIEW
+    </div>
+
+    <h1 style="
+        color:#172B4D;
+        font-size:32px;
+        margin:0;
+    ">
+        Loan Portfolio Dashboard
+    </h1>
+
+    <p style="
+        color:#718096;
+        font-size:14px;
+        margin-top:8px;
+    ">
+        Monitor applications, loan amounts and portfolio performance.
+    </p>
+
+</div>
+""")
+
+
+# =========================================================
+# 13. FILTERED DATA VALIDATION
 # =========================================================
 
 if filtered_df.empty:
@@ -666,7 +672,7 @@ if filtered_df.empty:
 
 
 # =========================================================
-# 12. KPI CALCULATIONS
+# 14. KPI CALCULATIONS
 # =========================================================
 
 total_applications = len(filtered_df)
@@ -685,20 +691,10 @@ pending_applications = (
 
 
 # =========================================================
-# 13. KPI CARDS
+# 15. KPI CARDS
 # =========================================================
 
-st.html("""
-<div style="
-    color: #172B4D;
-    font-size: 20px;
-    font-weight: 700;
-    margin-top: 25px;
-    margin-bottom: 15px;
-">
-    Portfolio Overview
-</div>
-""")
+create_section_heading("Portfolio Overview")
 
 kpi1, kpi2, kpi3, kpi4 = st.columns(4)
 
@@ -710,6 +706,7 @@ with kpi1:
         "Applications in selected data"
     )
 
+
 with kpi2:
 
     create_kpi_card(
@@ -718,6 +715,7 @@ with kpi2:
         "Total loan application value"
     )
 
+
 with kpi3:
 
     create_kpi_card(
@@ -725,6 +723,7 @@ with kpi3:
         format_crore(disbursed_amount),
         "Amount from disbursed applications"
     )
+
 
 with kpi4:
 
@@ -735,13 +734,17 @@ with kpi4:
     )
 
 
+st.write("")
+
+
 # =========================================================
-# 14. APPLICATION STATUS AND LOAN TYPE
+# 16. STATUS DISTRIBUTION
 # =========================================================
 
 create_section_heading("Application Status & Loan Type")
 
 col1, col2 = st.columns(2)
+
 
 with col1:
 
@@ -777,6 +780,10 @@ with col1:
     )
 
 
+# =========================================================
+# 17. LOAN TYPE ANALYSIS
+# =========================================================
+
 with col2:
 
     loan_data = (
@@ -810,7 +817,7 @@ with col2:
 
 
 # =========================================================
-# 15. BANK PERFORMANCE
+# 18. BANK PERFORMANCE
 # =========================================================
 
 create_section_heading("Bank Performance")
@@ -825,6 +832,7 @@ bank_data = (
     .reset_index()
     .sort_values("Loan_Amount", ascending=True)
 )
+
 
 fig_bank = px.bar(
     bank_data,
@@ -851,7 +859,7 @@ st.plotly_chart(
 
 
 # =========================================================
-# 16. EXECUTIVE PERFORMANCE
+# 19. EXECUTIVE PERFORMANCE
 # =========================================================
 
 create_section_heading("Executive Performance")
@@ -866,6 +874,7 @@ executive_data = (
     .reset_index()
     .sort_values("Loan_Amount", ascending=False)
 )
+
 
 fig_executive = px.bar(
     executive_data,
@@ -890,7 +899,7 @@ st.plotly_chart(
 
 
 # =========================================================
-# 17. MONTHLY LOAN TREND
+# 20. MONTHLY LOAN TREND
 # =========================================================
 
 create_section_heading("Monthly Loan Trend")
@@ -906,6 +915,7 @@ monthly_data = (
 monthly_data["Month Year"] = (
     monthly_data["Month Sort"].astype(str)
 )
+
 
 fig_monthly = px.line(
     monthly_data,
@@ -934,7 +944,7 @@ st.plotly_chart(
 
 
 # =========================================================
-# 18. TOP 10 CUSTOMERS
+# 21. TOP 10 CUSTOMERS
 # =========================================================
 
 create_section_heading("Top 10 Customers")
@@ -948,6 +958,7 @@ top_customers = (
     .head(10)
     .sort_values("Loan Amount", ascending=True)
 )
+
 
 fig_customers = px.bar(
     top_customers,
@@ -968,7 +979,7 @@ st.plotly_chart(
 
 
 # =========================================================
-# 19. DETAILED LOAN RECORDS
+# 22. DETAILED LOAN RECORDS
 # =========================================================
 
 create_section_heading("Detailed Loan Records")
@@ -1001,7 +1012,7 @@ st.dataframe(
 
 
 # =========================================================
-# 20. DOWNLOAD FILTERED DATA
+# 23. DOWNLOAD FILTERED DATA
 # =========================================================
 
 csv_data = filtered_df.to_csv(
@@ -1017,17 +1028,17 @@ st.download_button(
 
 
 # =========================================================
-# 21. FOOTER
+# 24. FOOTER
 # =========================================================
 
 st.html("""
 <div style="
-    text-align: center;
-    color: #94A3B8;
-    font-size: 12px;
-    padding: 30px 0 10px;
-    border-top: 1px solid #E5EAF1;
-    margin-top: 35px;
+    text-align:center;
+    color:#94A3B8;
+    font-size:12px;
+    padding:30px 0 10px;
+    border-top:1px solid #E5EAF1;
+    margin-top:35px;
 ">
     Loan Portfolio Analytics Dashboard
     <br>
