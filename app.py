@@ -2,7 +2,6 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
-import plotly.graph_objects as go
 
 # =========================================================
 # 1. PAGE CONFIGURATION
@@ -17,37 +16,26 @@ st.set_page_config(
 
 
 # =========================================================
-# 2. CUSTOM CSS
+# 2. GLOBAL CSS
 # =========================================================
 
-st.markdown("""
+st.html("""
 <style>
-
-/* Main application */
 
 .stApp {
     background-color: #F4F6FA;
 }
 
 .block-container {
+    max-width: 1500px;
     padding-top: 2rem;
     padding-bottom: 2rem;
-    max-width: 1500px;
 }
-
-/* Sidebar */
 
 [data-testid="stSidebar"] {
     background-color: #FFFFFF;
     border-right: 1px solid #E5EAF1;
 }
-
-[data-testid="stSidebar"] h2,
-[data-testid="stSidebar"] h3 {
-    color: #172B4D;
-}
-
-/* Buttons */
 
 .stButton > button {
     border-radius: 9px;
@@ -61,30 +49,13 @@ st.markdown("""
 .stButton > button:hover {
     background-color: #1D4ED8;
     color: white;
+    border: none;
 }
-
-/* Inputs */
-
-.stSelectbox div[data-baseweb="select"] > div,
-.stDateInput input,
-.stTextInput input {
-    border-radius: 8px;
-}
-
-/* Dataframe */
 
 [data-testid="stDataFrame"] {
     border: 1px solid #E5EAF1;
     border-radius: 12px;
 }
-
-/* Charts */
-
-.stPlotlyChart {
-    background-color: transparent;
-}
-
-/* KPI cards */
 
 .kpi-card {
     background: #FFFFFF;
@@ -114,17 +85,16 @@ st.markdown("""
     margin-top: 8px;
 }
 
-/* Section headings */
-
 .section-heading {
     color: #172B4D;
-    font-size: 20px;
+    font-size: 21px;
     font-weight: 700;
-    margin-bottom: 15px;
+    margin-top: 20px;
+    margin-bottom: 12px;
 }
 
 </style>
-""", unsafe_allow_html=True)
+""")
 
 
 # =========================================================
@@ -135,11 +105,11 @@ def clean_loan_data(data):
 
     data = data.copy()
 
-    # Remove completely empty columns and rows
+    # Remove empty rows and columns
     data = data.dropna(axis=1, how="all")
     data = data.dropna(axis=0, how="all")
 
-    # Remove accidental spaces in column names
+    # Clean column names
     data.columns = data.columns.astype(str).str.strip()
 
     required_columns = [
@@ -159,7 +129,8 @@ def clean_loan_data(data):
 
     if missing_columns:
         raise ValueError(
-            f"Missing required columns: {missing_columns}"
+            "Missing required columns: "
+            + ", ".join(missing_columns)
         )
 
     # Clean text columns
@@ -172,6 +143,7 @@ def clean_loan_data(data):
     ]
 
     for col in text_columns:
+
         data[col] = (
             data[col]
             .fillna("Unknown")
@@ -201,14 +173,14 @@ def clean_loan_data(data):
         dayfirst=True
     )
 
-    # Remove invalid records
+    # Remove invalid loan amounts and dates
     data = data.dropna(
         subset=["Loan Amount", "Date"]
     )
 
     if data.empty:
         raise ValueError(
-            "No valid loan records found in the uploaded file."
+            "No valid loan records found in the Excel file."
         )
 
     return data
@@ -225,33 +197,40 @@ def format_crore(amount):
 
 def create_kpi_card(label, value, note):
 
-    st.markdown(
-        f"""
-        <div class="kpi-card">
+    # HTML is rendered directly, not through Markdown
+    st.html(f"""
+    <div class="kpi-card">
 
-            <div class="kpi-label">
-                {label}
-            </div>
-
-            <div class="kpi-value">
-                {value}
-            </div>
-
-            <div class="kpi-note">
-                {note}
-            </div>
-
+        <div class="kpi-label">
+            {label}
         </div>
-        """,
-        unsafe_allow_html=True
-    )
+
+        <div class="kpi-value">
+            {value}
+        </div>
+
+        <div class="kpi-note">
+            {note}
+        </div>
+
+    </div>
+    """)
+
+
+def create_section_heading(title):
+
+    st.html(f"""
+    <div class="section-heading">
+        {title}
+    </div>
+    """)
 
 
 def chart_layout(fig):
 
     fig.update_layout(
-        paper_bgcolor="white",
-        plot_bgcolor="white",
+        paper_bgcolor="#FFFFFF",
+        plot_bgcolor="#FFFFFF",
         font=dict(
             family="Arial",
             color="#475569"
@@ -259,8 +238,8 @@ def chart_layout(fig):
         margin=dict(
             l=20,
             r=20,
-            t=45,
-            b=20
+            t=55,
+            b=30
         ),
         legend_title_text=""
     )
@@ -275,7 +254,7 @@ def chart_layout(fig):
 if "loan_df" not in st.session_state:
 
     # Hide sidebar on landing page
-    st.markdown("""
+    st.html("""
     <style>
         [data-testid="stSidebar"] {
             display: none;
@@ -284,92 +263,84 @@ if "loan_df" not in st.session_state:
         .block-container {
             padding-top: 2rem;
         }
+    </style>
+    """)
 
-        .upload-card {
+    # Landing page heading
+    st.html("""
+    <div style="
+        text-align: center;
+        padding: 65px 10px 35px;
+    ">
+
+        <div style="
+            color: #2563EB;
+            font-size: 13px;
+            font-weight: 700;
+            letter-spacing: 2px;
+            margin-bottom: 12px;
+        ">
+            LOAN PORTFOLIO MANAGEMENT
+        </div>
+
+        <h1 style="
+            font-size: 38px;
+            color: #172B4D;
+            margin-bottom: 12px;
+        ">
+            Loan Portfolio Analytics
+        </h1>
+
+        <p style="
+            color: #718096;
+            font-size: 16px;
+        ">
+            Transform your loan data into meaningful
+            insights and smarter decisions.
+        </p>
+
+    </div>
+    """)
+
+    # Center upload section
+    left, center, right = st.columns([1, 1.7, 1])
+
+    with center:
+
+        st.html("""
+        <div style="
             background: #FFFFFF;
             border: 1px solid #E5EAF1;
             border-radius: 20px;
             padding: 35px;
             text-align: center;
             box-shadow: 0 8px 30px rgba(30,50,80,0.06);
-        }
-    </style>
-    """, unsafe_allow_html=True)
-
-    # Main landing page heading
-    st.markdown(
-        """
-        <div style="
-            text-align: center;
-            padding: 65px 10px 35px;
         ">
 
             <div style="
-                color: #2563EB;
-                font-size: 13px;
-                font-weight: 700;
-                letter-spacing: 2px;
-                margin-bottom: 12px;
+                font-size: 48px;
+                margin-bottom: 15px;
             ">
-                LOAN PORTFOLIO MANAGEMENT
+                📊
             </div>
 
-            <h1 style="
-                font-size: 38px;
+            <h2 style="
                 color: #172B4D;
-                margin-bottom: 12px;
+                font-size: 24px;
             ">
-                Loan Portfolio Analytics
-            </h1>
+                Upload Your Loan Records
+            </h2>
 
             <p style="
                 color: #718096;
-                font-size: 16px;
+                font-size: 14px;
             ">
-                Transform your loan data into meaningful
-                insights and smarter decisions.
+                Select your Excel dataset to access
+                your interactive analytics dashboard.
             </p>
 
         </div>
-        """,
-        unsafe_allow_html=True
-    )
-
-    # Center upload card
-    left, center, right = st.columns([1, 1.7, 1])
-
-    with center:
-
-        st.markdown(
-            """
-            <div class="upload-card">
-
-                <div style="
-                    font-size:48px;
-                    margin-bottom:15px;
-                ">
-                    📊
-                </div>
-
-                <h2 style="
-                    color:#172B4D;
-                    font-size:24px;
-                ">
-                    Upload Your Loan Records
-                </h2>
-
-                <p style="
-                    color:#718096;
-                    font-size:14px;
-                ">
-                    Select your Excel dataset to access
-                    your interactive analytics dashboard.
-                </p>
-
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
+        """)
 
         uploaded_file = st.file_uploader(
             "Choose your Excel file",
@@ -399,22 +370,19 @@ if "loan_df" not in st.session_state:
                     f"Unable to process your Excel file: {e}"
                 )
 
-    # Footer
-    st.markdown(
-        """
-        <div style="
-            text-align:center;
-            color:#94A3B8;
-            font-size:12px;
-            margin-top:35px;
-        ">
-            Supported format: Excel (.xlsx)
-            <br><br>
-            Loan Portfolio Analytics Dashboard
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
+    # Landing page footer
+    st.html("""
+    <div style="
+        text-align: center;
+        color: #94A3B8;
+        font-size: 12px;
+        margin-top: 35px;
+    ">
+        Supported format: Excel (.xlsx)
+        <br><br>
+        Loan Portfolio Analytics Dashboard
+    </div>
+    """)
 
     st.stop()
 
@@ -425,53 +393,64 @@ if "loan_df" not in st.session_state:
 
 df = st.session_state["loan_df"].copy()
 
-# Create additional date fields
 df["Year"] = df["Date"].dt.year
-df["Month"] = df["Date"].dt.strftime("%b")
-df["Month Year"] = df["Date"].dt.to_period("M").astype(str)
+
+df["Month Year"] = (
+    df["Date"]
+    .dt.to_period("M")
+    .astype(str)
+)
+
+df["Month Sort"] = (
+    df["Date"]
+    .dt.to_period("M")
+)
 
 
 # =========================================================
 # 7. SIDEBAR
 # =========================================================
 
-st.sidebar.markdown(
-    """
-    <div style="padding:10px 0 20px;">
-
-        <div style="
-            color:#2563EB;
-            font-size:12px;
-            font-weight:700;
-            letter-spacing:1.5px;
-        ">
-            LOAN PORTFOLIO
-        </div>
-
-        <h2 style="
-            color:#172B4D;
-            margin-top:5px;
-            font-size:23px;
-        ">
-            Analytics
-        </h2>
-
-    </div>
-    """,
-    unsafe_allow_html=True
-)
+st.sidebar.title("📊 Loan Analytics")
 
 st.sidebar.caption(
-    "File: " + st.session_state.get("loan_filename", "Uploaded file")
+    st.session_state.get("loan_filename", "Uploaded file")
 )
 
 st.sidebar.divider()
 
-st.sidebar.markdown("### Dashboard Filters")
+st.sidebar.subheader("Dashboard Filters")
 
-# Upload another file button
+
+# Reset filters
+def reset_filters():
+
+    for key in [
+        "bank_filter",
+        "loan_filter",
+        "status_filter",
+        "executive_filter",
+        "customer_search",
+        "date_filter"
+    ]:
+
+        st.session_state.pop(key, None)
+
+
 if st.sidebar.button(
-    "↻ Upload Another File",
+    "↻ Reset Filters",
+    use_container_width=True,
+    on_click=reset_filters
+):
+    pass
+
+
+st.sidebar.divider()
+
+
+# Upload another file
+if st.sidebar.button(
+    "⬆ Upload Another File",
     use_container_width=True
 ):
 
@@ -483,42 +462,27 @@ if st.sidebar.button(
 
 
 # =========================================================
-# 8. FILTERS
+# 8. FILTER OPTIONS
 # =========================================================
 
-# Reset filter values before rendering widgets
-if st.sidebar.button(
-    "Reset Filters",
-    use_container_width=True
-):
-
-    for key in [
-        "bank_filter",
-        "loan_filter",
-        "status_filter",
-        "executive_filter",
-        "customer_search",
-        "date_filter"
-    ]:
-        st.session_state.pop(key, None)
-
-    st.rerun()
-
-
-bank_options = ["All Banks"] + sorted(
-    df["Bank Name"].dropna().unique().tolist()
+bank_options = (
+    ["All Banks"]
+    + sorted(df["Bank Name"].unique().tolist())
 )
 
-loan_options = ["All Loan Types"] + sorted(
-    df["Type of Loan"].dropna().unique().tolist()
+loan_options = (
+    ["All Loan Types"]
+    + sorted(df["Type of Loan"].unique().tolist())
 )
 
-status_options = ["All Statuses"] + sorted(
-    df["Status"].dropna().unique().tolist()
+status_options = (
+    ["All Statuses"]
+    + sorted(df["Status"].unique().tolist())
 )
 
-executive_options = ["All Executives"] + sorted(
-    df["Executive Name"].dropna().unique().tolist()
+executive_options = (
+    ["All Executives"]
+    + sorted(df["Executive Name"].unique().tolist())
 )
 
 
@@ -558,6 +522,7 @@ selected_dates = st.sidebar.date_input(
     key="date_filter"
 )
 
+
 customer_search = st.sidebar.text_input(
     "Search Customer",
     placeholder="Enter customer name...",
@@ -571,11 +536,13 @@ customer_search = st.sidebar.text_input(
 
 filtered_df = df.copy()
 
+
 if selected_bank != "All Banks":
 
     filtered_df = filtered_df[
         filtered_df["Bank Name"] == selected_bank
     ]
+
 
 if selected_loan != "All Loan Types":
 
@@ -583,11 +550,13 @@ if selected_loan != "All Loan Types":
         filtered_df["Type of Loan"] == selected_loan
     ]
 
+
 if selected_status != "All Statuses":
 
     filtered_df = filtered_df[
         filtered_df["Status"] == selected_status
     ]
+
 
 if selected_executive != "All Executives":
 
@@ -595,14 +564,17 @@ if selected_executive != "All Executives":
         filtered_df["Executive Name"] == selected_executive
     ]
 
+
 if isinstance(selected_dates, (tuple, list)) and len(selected_dates) == 2:
 
     start_date, end_date = selected_dates
 
     filtered_df = filtered_df[
-        (filtered_df["Date"].dt.date >= start_date) &
+        (filtered_df["Date"].dt.date >= start_date)
+        &
         (filtered_df["Date"].dt.date <= end_date)
     ]
+
 
 if customer_search:
 
@@ -619,44 +591,55 @@ if customer_search:
 # 10. DASHBOARD HEADER
 # =========================================================
 
-st.markdown(
-    """
-    <div style="margin-bottom:25px;">
+st.html("""
+<div style="margin-bottom: 25px;">
 
-        <div style="
-            color:#2563EB;
-            font-size:12px;
-            font-weight:700;
-            letter-spacing:1.5px;
-            margin-bottom:8px;
-        ">
-            OVERVIEW
-        </div>
-
-        <h1 style="
-            color:#172B4D;
-            font-size:32px;
-            margin:0;
-        ">
-            Loan Portfolio Dashboard
-        </h1>
-
-        <p style="
-            color:#718096;
-            font-size:14px;
-            margin-top:8px;
-        ">
-            Monitor applications, loan amounts and portfolio performance.
-        </p>
-
+    <div style="
+        color: #2563EB;
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: 1.5px;
+        margin-bottom: 8px;
+    ">
+        OVERVIEW
     </div>
-    """,
-    unsafe_allow_html=True
-)
+
+    <h1 style="
+        color: #172B4D;
+        font-size: 32px;
+        margin: 0;
+    ">
+        Loan Portfolio Dashboard
+    </h1>
+
+    <p style="
+        color: #718096;
+        font-size: 14px;
+        margin-top: 8px;
+    ">
+        Monitor applications, loan amounts and portfolio performance.
+    </p>
+
+</div>
+""")
 
 
 # =========================================================
-# 11. KPI CALCULATIONS
+# 11. CHECK FILTERED DATA
+# =========================================================
+
+if filtered_df.empty:
+
+    st.warning(
+        "No records match the selected filters. "
+        "Please change your filters."
+    )
+
+    st.stop()
+
+
+# =========================================================
+# 12. KPI CALCULATIONS
 # =========================================================
 
 total_applications = len(filtered_df)
@@ -675,33 +658,40 @@ pending_applications = (
 
 
 # =========================================================
-# 12. KPI CARDS
+# 13. KPI CARDS
 # =========================================================
 
 kpi1, kpi2, kpi3, kpi4 = st.columns(4)
 
 with kpi1:
+
     create_kpi_card(
         "TOTAL APPLICATIONS",
         f"{total_applications:,}",
         "Applications in selected data"
     )
 
+
 with kpi2:
+
     create_kpi_card(
         "TOTAL LOAN AMOUNT",
         format_crore(total_loan_amount),
-        "Total value of loan applications"
+        "Total loan application value"
     )
 
+
 with kpi3:
+
     create_kpi_card(
         "DISBURSED AMOUNT",
         format_crore(disbursed_amount),
         "Amount from disbursed applications"
     )
 
+
 with kpi4:
+
     create_kpi_card(
         "PENDING APPLICATIONS",
         f"{pending_applications:,}",
@@ -709,33 +699,17 @@ with kpi4:
     )
 
 
-st.markdown("<br>", unsafe_allow_html=True)
-
-
-# =========================================================
-# 13. NO DATA MESSAGE
-# =========================================================
-
-if filtered_df.empty:
-
-    st.warning(
-        "No records match the selected filters. "
-        "Please change your filters."
-    )
-
-    st.stop()
+st.write("")
 
 
 # =========================================================
 # 14. STATUS DISTRIBUTION
 # =========================================================
 
-st.markdown(
-    '<div class="section-heading">Application Status Overview</div>',
-    unsafe_allow_html=True
-)
+create_section_heading("Application Status Overview")
 
 col1, col2 = st.columns(2)
+
 
 with col1:
 
@@ -745,7 +719,10 @@ with col1:
         .reset_index()
     )
 
-    status_data.columns = ["Status", "Applications"]
+    status_data.columns = [
+        "Status",
+        "Applications"
+    ]
 
     fig_status = px.pie(
         status_data,
@@ -775,7 +752,8 @@ with col1:
 with col2:
 
     loan_data = (
-        filtered_df.groupby("Type of Loan")["Loan Amount"]
+        filtered_df
+        .groupby("Type of Loan")["Loan Amount"]
         .sum()
         .reset_index()
         .sort_values("Loan Amount", ascending=False)
@@ -807,13 +785,11 @@ with col2:
 # 16. BANK PERFORMANCE
 # =========================================================
 
-st.markdown(
-    '<div class="section-heading">Bank Performance</div>',
-    unsafe_allow_html=True
-)
+create_section_heading("Bank Performance")
 
 bank_data = (
-    filtered_df.groupby("Bank Name")
+    filtered_df
+    .groupby("Bank Name")
     .agg(
         Applications=("Customer Name", "count"),
         Loan_Amount=("Loan Amount", "sum")
@@ -821,6 +797,7 @@ bank_data = (
     .reset_index()
     .sort_values("Loan_Amount", ascending=True)
 )
+
 
 fig_bank = px.bar(
     bank_data,
@@ -850,13 +827,11 @@ st.plotly_chart(
 # 17. EXECUTIVE PERFORMANCE
 # =========================================================
 
-st.markdown(
-    '<div class="section-heading">Executive Performance</div>',
-    unsafe_allow_html=True
-)
+create_section_heading("Executive Performance")
 
-exec_data = (
-    filtered_df.groupby("Executive Name")
+executive_data = (
+    filtered_df
+    .groupby("Executive Name")
     .agg(
         Applications=("Customer Name", "count"),
         Loan_Amount=("Loan Amount", "sum")
@@ -865,8 +840,9 @@ exec_data = (
     .sort_values("Loan_Amount", ascending=False)
 )
 
-fig_exec = px.bar(
-    exec_data,
+
+fig_executive = px.bar(
+    executive_data,
     x="Executive Name",
     y="Loan_Amount",
     title="Loan Amount Handled by Executive",
@@ -874,15 +850,15 @@ fig_exec = px.bar(
     color_continuous_scale="Teal"
 )
 
-fig_exec.update_layout(
+fig_executive.update_layout(
     xaxis_title="Executive",
     yaxis_title="Loan Amount (₹)"
 )
 
-fig_exec = chart_layout(fig_exec)
+fig_executive = chart_layout(fig_executive)
 
 st.plotly_chart(
-    fig_exec,
+    fig_executive,
     use_container_width=True
 )
 
@@ -891,17 +867,20 @@ st.plotly_chart(
 # 18. MONTHLY LOAN TREND
 # =========================================================
 
-st.markdown(
-    '<div class="section-heading">Monthly Loan Trend</div>',
-    unsafe_allow_html=True
-)
+create_section_heading("Monthly Loan Trend")
 
 monthly_data = (
-    filtered_df.groupby("Month Year")["Loan Amount"]
+    filtered_df
+    .groupby("Month Sort")["Loan Amount"]
     .sum()
     .reset_index()
-    .sort_values("Month Year")
+    .sort_values("Month Sort")
 )
+
+monthly_data["Month Year"] = (
+    monthly_data["Month Sort"].astype(str)
+)
+
 
 fig_monthly = px.line(
     monthly_data,
@@ -930,24 +909,28 @@ st.plotly_chart(
 
 
 # =========================================================
-# 19. TOP CUSTOMERS
+# 19. TOP 10 CUSTOMERS
 # =========================================================
 
-st.markdown(
-    '<div class="section-heading">Top 10 Customers</div>',
-    unsafe_allow_html=True
-)
+create_section_heading("Top 10 Customers")
 
 top_customers = (
-    filtered_df.groupby("Customer Name")["Loan Amount"]
+    filtered_df
+    .groupby("Customer Name")["Loan Amount"]
     .sum()
     .reset_index()
     .sort_values("Loan Amount", ascending=False)
     .head(10)
 )
 
+top_customers = top_customers.sort_values(
+    "Loan Amount",
+    ascending=True
+)
+
+
 fig_customers = px.bar(
-    top_customers.sort_values("Loan Amount"),
+    top_customers,
     x="Loan Amount",
     y="Customer Name",
     orientation="h",
@@ -968,10 +951,7 @@ st.plotly_chart(
 # 20. DETAILED LOAN RECORDS
 # =========================================================
 
-st.markdown(
-    '<div class="section-heading">Detailed Loan Records</div>',
-    unsafe_allow_html=True
-)
+create_section_heading("Detailed Loan Records")
 
 display_columns = [
     col for col in [
@@ -1012,8 +992,7 @@ st.download_button(
     label="⬇ Download Filtered Data",
     data=csv_data,
     file_name="loan_portfolio_filtered_data.csv",
-    mime="text/csv",
-    use_container_width=False
+    mime="text/csv"
 )
 
 
@@ -1021,20 +1000,17 @@ st.download_button(
 # 22. FOOTER
 # =========================================================
 
-st.markdown(
-    """
-    <div style="
-        text-align:center;
-        color:#94A3B8;
-        font-size:12px;
-        padding:30px 0 10px;
-        border-top:1px solid #E5EAF1;
-        margin-top:35px;
-    ">
-        Loan Portfolio Analytics Dashboard
-        <br>
-        Data-driven insights for smarter loan management
-    </div>
-    """,
-    unsafe_allow_html=True
-)
+st.html("""
+<div style="
+    text-align: center;
+    color: #94A3B8;
+    font-size: 12px;
+    padding: 30px 0 10px;
+    border-top: 1px solid #E5EAF1;
+    margin-top: 35px;
+">
+    Loan Portfolio Analytics Dashboard
+    <br>
+    Data-driven insights for smarter loan management
+</div>
+""")
