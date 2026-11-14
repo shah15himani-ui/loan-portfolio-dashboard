@@ -304,99 +304,105 @@ def clean_loan_data(data):
     return data
 
 
+
 # =========================================================
 # 4. LANDING PAGE
 # =========================================================
 
 if "loan_df" not in st.session_state:
 
-    # Hide dashboard sidebar on landing page
+    # Hide sidebar on landing page
     st.markdown("""
-        <style>
+    <style>
         [data-testid="stSidebar"] {
             display: none;
         }
-        </style>
+
+        .block-container {
+            padding-top: 2rem;
+        }
+
+        .upload-card {
+            background: #FFFFFF;
+            border: 1px solid #E5EAF1;
+            border-radius: 20px;
+            padding: 35px;
+            text-align: center;
+            box-shadow: 0 8px 30px rgba(30,50,80,0.06);
+        }
+    </style>
     """, unsafe_allow_html=True)
 
     # Landing page heading
     st.markdown("""
+    <div style="
+        text-align: center;
+        padding: 65px 10px 35px;
+    ">
+
         <div style="
-            text-align:center;
-            padding:65px 10px 25px;
+            color: #2563EB;
+            font-size: 13px;
+            font-weight: 700;
+            letter-spacing: 2px;
+            margin-bottom: 12px;
         ">
-
-            <div style="
-                color:#2563EB;
-                font-size:13px;
-                font-weight:700;
-                letter-spacing:2px;
-                margin-bottom:12px;
-            ">
-                LOAN PORTFOLIO MANAGEMENT
-            </div>
-
-            <h1 style="
-                font-size:38px;
-                color:#172B4D;
-                margin-bottom:12px;
-            ">
-                Loan Portfolio Analytics
-            </h1>
-
-            <p style="
-                color:#718096;
-                font-size:16px;
-            ">
-                Transform your loan data into meaningful
-                insights and smarter decisions.
-            </p>
-
+            LOAN PORTFOLIO MANAGEMENT
         </div>
+
+        <h1 style="
+            font-size: 38px;
+            color: #172B4D;
+            margin-bottom: 12px;
+        ">
+            Loan Portfolio Analytics
+        </h1>
+
+        <p style="
+            color: #718096;
+            font-size: 16px;
+        ">
+            Transform your loan data into meaningful
+            insights and smarter decisions.
+        </p>
+
+    </div>
     """, unsafe_allow_html=True)
 
-    st.write("")
-
-    # Centered upload card
+    # Center upload card
     left, center, right = st.columns([1, 1.7, 1])
 
     with center:
 
         st.markdown("""
-            <div class="landing-container"
-                 style="text-align:center;">
+        <div class="upload-card">
 
-                <div style="
-                    font-size:45px;
-                    margin-bottom:12px;
-                ">
-                    📊
-                </div>
-
-                <h2 style="
-                    color:#172B4D;
-                    margin-bottom:8px;
-                ">
-                    Upload Your Loan Records
-                </h2>
-
-                <p style="
-                    color:#718096;
-                    font-size:14px;
-                    margin-bottom:20px;
-                ">
-                    Select your Excel dataset to access
-                    your interactive analytics dashboard.
-                </p>
-
+            <div style="font-size:48px; margin-bottom:15px;">
+                📊
             </div>
+
+            <h2 style="
+                color:#172B4D;
+                font-size:24px;
+            ">
+                Upload Your Loan Records
+            </h2>
+
+            <p style="
+                color:#718096;
+                font-size:14px;
+            ">
+                Select your Excel dataset to access
+                your interactive analytics dashboard.
+            </p>
+
+        </div>
         """, unsafe_allow_html=True)
 
         uploaded_file = st.file_uploader(
             "Choose your Excel file",
             type=["xlsx"],
-            key="landing_upload",
-            help="Upload your loan records in XLSX format."
+            key="landing_upload"
         )
 
         if uploaded_file is not None:
@@ -413,8 +419,6 @@ if "loan_df" not in st.session_state:
                     uploaded_file.name
                 )
 
-                st.session_state["dashboard_ready"] = True
-
                 st.rerun()
 
             except Exception as e:
@@ -423,20 +427,22 @@ if "loan_df" not in st.session_state:
                     f"Unable to process your Excel file: {e}"
                 )
 
+    # Footer
     st.markdown("""
-        <div style="
-            text-align:center;
-            color:#94A3B8;
-            font-size:12px;
-            margin-top:35px;
-        ">
-            Supported format: Excel (.xlsx)
-            <br><br>
-            Loan Portfolio Analytics Dashboard
-        </div>
+    <div style="
+        text-align:center;
+        color:#94A3B8;
+        font-size:12px;
+        margin-top:35px;
+    ">
+        Supported format: Excel (.xlsx)
+        <br><br>
+        Loan Portfolio Analytics Dashboard
+    </div>
     """, unsafe_allow_html=True)
 
     st.stop()
+
 
 
 # =========================================================
