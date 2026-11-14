@@ -114,32 +114,41 @@ st.sidebar.subheader("Search")
 search = st.sidebar.text_input("Customer Name")
 
 
+
 # --------------------------------
 # APPLY FILTERS
 # --------------------------------
 
-filtered_df = df[
-    (df["Bank Name"].isin(selected_banks)) &
-    (df["Type of Loan"].isin(selected_loans)) &
-    (df["Status"].isin(selected_status)) &
-    (df["Executive Name"].isin(selected_executives))
-].copy()
+filtered_df = df.copy()
 
-if search:
-    search_columns = [
-        "Customer Name",
-        "Bank Name",
-        "Type of Loan",
-        "Executive Name"
+filtered_df = filtered_df[
+    (filtered_df["Bank Name"].isin(selected_bank)) &
+    (filtered_df["Type of Loan"].isin(selected_loan)) &
+    (filtered_df["Status"].isin(selected_status)) &
+    (filtered_df["Executive Name"].isin(selected_executive))
+]
+
+# Apply date filter
+if len(selected_dates) == 2:
+
+    start_date, end_date = selected_dates
+
+    filtered_df = filtered_df[
+        (filtered_df["Date"].dt.date >= start_date) &
+        (filtered_df["Date"].dt.date <= end_date)
     ]
 
-    mask = filtered_df[search_columns].fillna("").apply(
-        lambda col: col.str.contains(
-            search, case=False, regex=False
-        )
-    ).any(axis=1)
+# Apply customer search
+if search:
 
-    filtered_df = filtered_df[mask]
+    filtered_df = filtered_df[
+        filtered_df["Customer Name"].str.contains(
+            search,
+            case=False,
+            na=False
+        )
+    ]
+
 
 # --------------------------------
 # KPI CALCULATIONS
