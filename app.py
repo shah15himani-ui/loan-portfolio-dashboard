@@ -60,40 +60,37 @@ if df.empty:
     st.stop()
 
 
+
 # --------------------------------
 # SIDEBAR FILTERS
 # --------------------------------
 
 st.sidebar.title("Dashboard Filters")
 
-st.sidebar.subheader("Select Bank")
+st.sidebar.subheader("Bank")
 
-selected_bank = st.sidebar.multiselect(
-    "Bank Name",
-    options=sorted(df["Bank Name"].dropna().unique()),
-    default=sorted(df["Bank Name"].dropna().unique())
+selected_bank = st.sidebar.selectbox(
+    "Select Bank",
+    ["All Banks"] + sorted(df["Bank Name"].dropna().unique().tolist())
 )
 
 st.sidebar.subheader("Loan Details")
 
-selected_loan = st.sidebar.multiselect(
+selected_loan = st.sidebar.selectbox(
     "Type of Loan",
-    options=sorted(df["Type of Loan"].dropna().unique()),
-    default=sorted(df["Type of Loan"].dropna().unique())
+    ["All Loan Types"] + sorted(df["Type of Loan"].dropna().unique().tolist())
 )
 
-selected_status = st.sidebar.multiselect(
+selected_status = st.sidebar.selectbox(
     "Application Status",
-    options=sorted(df["Status"].dropna().unique()),
-    default=sorted(df["Status"].dropna().unique())
+    ["All Statuses"] + sorted(df["Status"].dropna().unique().tolist())
 )
 
 st.sidebar.subheader("Executive")
 
-selected_executive = st.sidebar.multiselect(
+selected_executive = st.sidebar.selectbox(
     "Executive Name",
-    options=sorted(df["Executive Name"].dropna().unique()),
-    default=sorted(df["Executive Name"].dropna().unique())
+    ["All Executives"] + sorted(df["Executive Name"].dropna().unique().tolist())
 )
 
 st.sidebar.subheader("Date Filter")
@@ -108,7 +105,6 @@ selected_dates = st.sidebar.date_input(
     max_value=max_date
 )
 
-# Customer Search
 st.sidebar.subheader("Search")
 
 search = st.sidebar.text_input("Customer Name")
