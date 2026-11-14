@@ -111,22 +111,39 @@ search = st.sidebar.text_input("Customer Name")
 
 
 
+
 # --------------------------------
 # APPLY FILTERS
 # --------------------------------
 
 filtered_df = df.copy()
 
-filtered_df = filtered_df[
-    (filtered_df["Bank Name"].isin(selected_bank)) &
-    (filtered_df["Type of Loan"].isin(selected_loan)) &
-    (filtered_df["Status"].isin(selected_status)) &
-    (filtered_df["Executive Name"].isin(selected_executive))
-]
+# Bank filter
+if selected_bank != "All Banks":
+    filtered_df = filtered_df[
+        filtered_df["Bank Name"] == selected_bank
+    ]
 
-# Apply date filter
+# Loan type filter
+if selected_loan != "All Loan Types":
+    filtered_df = filtered_df[
+        filtered_df["Type of Loan"] == selected_loan
+    ]
+
+# Status filter
+if selected_status != "All Statuses":
+    filtered_df = filtered_df[
+        filtered_df["Status"] == selected_status
+    ]
+
+# Executive filter
+if selected_executive != "All Executives":
+    filtered_df = filtered_df[
+        filtered_df["Executive Name"] == selected_executive
+    ]
+
+# Date filter
 if len(selected_dates) == 2:
-
     start_date, end_date = selected_dates
 
     filtered_df = filtered_df[
@@ -134,9 +151,8 @@ if len(selected_dates) == 2:
         (filtered_df["Date"].dt.date <= end_date)
     ]
 
-# Apply customer search
+# Customer search
 if search:
-
     filtered_df = filtered_df[
         filtered_df["Customer Name"].str.contains(
             search,
@@ -144,6 +160,7 @@ if search:
             na=False
         )
     ]
+
 
 
 # --------------------------------
