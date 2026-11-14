@@ -3,6 +3,7 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 
+
 # =========================================================
 # 1. PAGE CONFIGURATION
 # =========================================================
@@ -16,13 +17,13 @@ st.set_page_config(
 
 
 # =========================================================
-# 2. CUSTOM DESIGN / CSS
+# 2. CUSTOM CSS
 # =========================================================
 
 st.markdown("""
 <style>
 
-/* ---------- MAIN APPLICATION ---------- */
+/* MAIN APPLICATION */
 
 .stApp {
     background-color: #F4F6FA;
@@ -35,11 +36,10 @@ st.markdown("""
     max-width: 1500px;
 }
 
-/* ---------- HEADINGS ---------- */
+/* HEADINGS */
 
 h1 {
     color: #172B4D !important;
-    font-size: 30px !important;
     font-weight: 750 !important;
     letter-spacing: -0.5px;
 }
@@ -49,7 +49,7 @@ h2, h3 {
     font-weight: 650 !important;
 }
 
-/* ---------- SIDEBAR ---------- */
+/* SIDEBAR */
 
 [data-testid="stSidebar"] {
     background: #FFFFFF;
@@ -71,7 +71,7 @@ h2, h3 {
     color: #53657B !important;
 }
 
-/* ---------- SIDEBAR EXPANDERS ---------- */
+/* SIDEBAR EXPANDERS */
 
 [data-testid="stSidebar"] [data-testid="stExpander"] {
     background: #F8FAFD;
@@ -80,11 +80,7 @@ h2, h3 {
     margin-bottom: 9px;
 }
 
-[data-testid="stSidebar"] [data-testid="stExpander"] summary {
-    font-weight: 600;
-}
-
-/* ---------- DROPDOWNS ---------- */
+/* DROPDOWNS */
 
 [data-testid="stSidebar"] [data-baseweb="select"] > div {
     background: #FFFFFF;
@@ -97,7 +93,7 @@ h2, h3 {
     color: #26384D;
 }
 
-/* ---------- INPUTS ---------- */
+/* INPUTS */
 
 [data-testid="stSidebar"] input {
     background: #FFFFFF;
@@ -105,28 +101,28 @@ h2, h3 {
     border-radius: 8px;
 }
 
-/* ---------- FILE UPLOADER ---------- */
+/* FILE UPLOADER */
 
-[data-testid="stSidebar"] [data-testid="stFileUploader"] {
+[data-testid="stFileUploader"] {
     background: #F8FAFD;
     border: 1px solid #E3EAF2;
     border-radius: 12px;
-    padding: 10px;
+    padding: 12px;
 }
 
-[data-testid="stSidebar"] [data-testid="stFileUploaderDropzone"] {
+[data-testid="stFileUploaderDropzone"] {
     background: #FFFFFF;
     border: 2px dashed #A9C2DE;
-    border-radius: 10px;
+    border-radius: 12px;
     transition: 0.2s ease;
 }
 
-[data-testid="stSidebar"] [data-testid="stFileUploaderDropzone"]:hover {
+[data-testid="stFileUploaderDropzone"]:hover {
     background: #EDF5FF;
     border-color: #2563EB;
 }
 
-/* ---------- BUTTONS ---------- */
+/* BUTTONS */
 
 .stButton button {
     background: #2563EB;
@@ -141,10 +137,19 @@ h2, h3 {
 .stButton button:hover {
     background: #1D4ED8;
     color: #FFFFFF;
-    transform: translateY(-1px);
 }
 
-/* ---------- KPI CARDS ---------- */
+/* LANDING PAGE */
+
+.landing-container {
+    background: #FFFFFF;
+    border: 1px solid #E5EAF1;
+    border-radius: 20px;
+    padding: 35px;
+    box-shadow: 0 8px 30px rgba(30, 50, 80, 0.06);
+}
+
+/* KPI CARDS */
 
 .kpi-card {
     background: #FFFFFF;
@@ -198,7 +203,7 @@ h2, h3 {
     font-size: 11px;
 }
 
-/* ---------- CHARTS ---------- */
+/* CHARTS */
 
 [data-testid="stPlotlyChart"] {
     background: #FFFFFF;
@@ -208,7 +213,7 @@ h2, h3 {
     box-shadow: 0 3px 12px rgba(30, 50, 80, 0.03);
 }
 
-/* ---------- DATA TABLE ---------- */
+/* DATA TABLE */
 
 [data-testid="stDataFrame"] {
     background: #FFFFFF;
@@ -216,13 +221,13 @@ h2, h3 {
     border: 1px solid #E8EDF3;
 }
 
-/* ---------- DIVIDERS ---------- */
+/* DIVIDERS */
 
 hr {
     border-color: #E7ECF2;
 }
 
-/* ---------- DOWNLOAD BUTTON ---------- */
+/* DOWNLOAD BUTTON */
 
 .stDownloadButton button {
     background: #10B981;
@@ -241,71 +246,16 @@ hr {
 
 
 # =========================================================
-# 3. DASHBOARD HEADER
+# 3. DATA CLEANING FUNCTION
 # =========================================================
 
-st.title("Loan Portfolio Analytics")
+def clean_loan_data(data):
 
-st.markdown(
-    "Monitor loan applications, portfolio performance, "
-    "bank activity and executive performance."
-)
-
-st.divider()
-
-
-# =========================================================
-# 4. SIDEBAR - FILE UPLOAD
-# =========================================================
-
-st.sidebar.markdown("## 📊 Loan Analytics")
-
-st.sidebar.caption("Portfolio Management Dashboard")
-
-st.sidebar.markdown("---")
-
-st.sidebar.markdown("### 📂 Upload Loan Records")
-
-st.sidebar.caption(
-    "Upload your Excel dataset to analyse your portfolio."
-)
-
-uploaded_file = st.sidebar.file_uploader(
-    "Choose Excel file",
-    type=["xlsx"],
-    key="loan_file",
-    help="Upload an Excel file in XLSX format."
-)
-
-
-# Stop dashboard until file is uploaded
-
-if uploaded_file is None:
-
-    st.info(
-        "Please upload your loan_records.xlsx file "
-        "using the sidebar."
-    )
-
-    st.markdown(
-        "**Supported format:** Excel (.xlsx)"
-    )
-
-    st.stop()
-
-
-# =========================================================
-# 5. LOAD AND CLEAN DATA
-# =========================================================
-
-try:
-
-    df = pd.read_excel(uploaded_file)
+    data = data.copy()
 
     # Remove completely empty columns
-    df = df.dropna(axis=1, how="all")
+    data = data.dropna(axis=1, how="all")
 
-    # Required columns
     required_columns = [
         "Customer Name",
         "Type of Loan",
@@ -318,55 +268,248 @@ try:
 
     missing_columns = [
         col for col in required_columns
-        if col not in df.columns
+        if col not in data.columns
     ]
 
     if missing_columns:
-
-        st.error(
+        raise ValueError(
             f"Missing required columns: {missing_columns}"
         )
 
-        st.stop()
-
     # Clean text columns
-    for col in df.select_dtypes(include="object").columns:
-
-        df[col] = df[col].str.strip()
+    for col in data.select_dtypes(include="object").columns:
+        data[col] = data[col].str.strip()
 
     # Convert loan amount
-    df["Loan Amount"] = pd.to_numeric(
-        df["Loan Amount"],
+    data["Loan Amount"] = pd.to_numeric(
+        data["Loan Amount"],
         errors="coerce"
     )
 
     # Convert date
-    df["Date"] = pd.to_datetime(
-        df["Date"],
+    data["Date"] = pd.to_datetime(
+        data["Date"],
         errors="coerce",
         dayfirst=True
     )
 
-    # Remove records with invalid amount or date
-    df = df.dropna(
+    # Remove invalid amounts and dates
+    data = data.dropna(
         subset=["Loan Amount", "Date"]
     )
 
-    if df.empty:
+    if data.empty:
+        raise ValueError("No valid loan records found.")
 
-        st.error("No valid loan records found.")
+    return data
 
-        st.stop()
 
-except Exception as e:
+# =========================================================
+# 4. LANDING PAGE
+# =========================================================
 
-    st.error(f"Error loading Excel file: {e}")
+if "loan_df" not in st.session_state:
+
+    # Hide dashboard sidebar on landing page
+    st.markdown("""
+        <style>
+        [data-testid="stSidebar"] {
+            display: none;
+        }
+        </style>
+    """, unsafe_allow_html=True)
+
+    # Landing page heading
+    st.markdown("""
+        <div style="
+            text-align:center;
+            padding:65px 10px 25px;
+        ">
+
+            <div style="
+                color:#2563EB;
+                font-size:13px;
+                font-weight:700;
+                letter-spacing:2px;
+                margin-bottom:12px;
+            ">
+                LOAN PORTFOLIO MANAGEMENT
+            </div>
+
+            <h1 style="
+                font-size:38px;
+                color:#172B4D;
+                margin-bottom:12px;
+            ">
+                Loan Portfolio Analytics
+            </h1>
+
+            <p style="
+                color:#718096;
+                font-size:16px;
+            ">
+                Transform your loan data into meaningful
+                insights and smarter decisions.
+            </p>
+
+        </div>
+    """, unsafe_allow_html=True)
+
+    st.write("")
+
+    # Centered upload card
+    left, center, right = st.columns([1, 1.7, 1])
+
+    with center:
+
+        st.markdown("""
+            <div class="landing-container"
+                 style="text-align:center;">
+
+                <div style="
+                    font-size:45px;
+                    margin-bottom:12px;
+                ">
+                    📊
+                </div>
+
+                <h2 style="
+                    color:#172B4D;
+                    margin-bottom:8px;
+                ">
+                    Upload Your Loan Records
+                </h2>
+
+                <p style="
+                    color:#718096;
+                    font-size:14px;
+                    margin-bottom:20px;
+                ">
+                    Select your Excel dataset to access
+                    your interactive analytics dashboard.
+                </p>
+
+            </div>
+        """, unsafe_allow_html=True)
+
+        uploaded_file = st.file_uploader(
+            "Choose your Excel file",
+            type=["xlsx"],
+            key="landing_upload",
+            help="Upload your loan records in XLSX format."
+        )
+
+        if uploaded_file is not None:
+
+            try:
+
+                raw_data = pd.read_excel(uploaded_file)
+
+                cleaned_data = clean_loan_data(raw_data)
+
+                st.session_state["loan_df"] = cleaned_data
+
+                st.session_state["loan_filename"] = (
+                    uploaded_file.name
+                )
+
+                st.session_state["dashboard_ready"] = True
+
+                st.rerun()
+
+            except Exception as e:
+
+                st.error(
+                    f"Unable to process your Excel file: {e}"
+                )
+
+    st.markdown("""
+        <div style="
+            text-align:center;
+            color:#94A3B8;
+            font-size:12px;
+            margin-top:35px;
+        ">
+            Supported format: Excel (.xlsx)
+            <br><br>
+            Loan Portfolio Analytics Dashboard
+        </div>
+    """, unsafe_allow_html=True)
 
     st.stop()
 
 
 # =========================================================
-# 6. FILTER OPTIONS
+# 5. DASHBOARD DATA
+# =========================================================
+
+df = st.session_state["loan_df"]
+
+
+# =========================================================
+# 6. SIDEBAR HEADER
+# =========================================================
+
+st.sidebar.markdown("""
+    <div style="
+        padding:5px 0 12px;
+    ">
+        <div style="
+            font-size:22px;
+            font-weight:750;
+            color:#172B4D;
+        ">
+            📊 Loan Analytics
+        </div>
+
+        <div style="
+            color:#8996A8;
+            font-size:12px;
+            margin-top:5px;
+        ">
+            Portfolio Management Dashboard
+        </div>
+    </div>
+""", unsafe_allow_html=True)
+
+st.sidebar.markdown("---")
+
+st.sidebar.caption(
+    "Current dataset: " +
+    st.session_state["loan_filename"]
+)
+
+# Return to landing page
+if st.sidebar.button(
+    "↻ Upload Another File",
+    use_container_width=True
+):
+
+    del st.session_state["loan_df"]
+    del st.session_state["loan_filename"]
+
+    if "dashboard_ready" in st.session_state:
+        del st.session_state["dashboard_ready"]
+
+    st.rerun()
+
+
+# =========================================================
+# 7. DASHBOARD HEADER
+# =========================================================
+
+st.title("Loan Portfolio Dashboard")
+
+st.markdown(
+    "Monitor loan applications, portfolio performance, "
+    "bank activity and executive performance."
+)
+
+st.divider()
+
+
+# =========================================================
+# 8. FILTER OPTIONS
 # =========================================================
 
 bank_options = (
@@ -394,7 +537,7 @@ max_date = df["Date"].max().date()
 
 
 # =========================================================
-# 7. RESET FILTER FUNCTION
+# 9. RESET FILTER FUNCTION
 # =========================================================
 
 def reset_filters():
@@ -416,10 +559,8 @@ def reset_filters():
 
 
 # =========================================================
-# 8. INTERACTIVE SIDEBAR FILTERS
+# 10. INTERACTIVE SIDEBAR FILTERS
 # =========================================================
-
-st.sidebar.markdown("---")
 
 st.sidebar.markdown("## 🎛️ Dashboard Filters")
 
@@ -516,7 +657,7 @@ st.sidebar.button(
 
 
 # =========================================================
-# 9. APPLY FILTERS
+# 11. APPLY FILTERS
 # =========================================================
 
 filtered_df = df.copy()
@@ -594,7 +735,7 @@ st.sidebar.caption(
 
 
 # =========================================================
-# 10. KPI CALCULATIONS
+# 12. KPI CALCULATIONS
 # =========================================================
 
 total_applications = len(filtered_df)
@@ -615,7 +756,7 @@ disbursed_applications = len(disbursed_df)
 
 
 # =========================================================
-# 11. PORTFOLIO KPI CARDS
+# 13. KPI CARDS
 # =========================================================
 
 st.subheader("Portfolio Overview")
@@ -672,7 +813,7 @@ st.write("")
 
 
 # =========================================================
-# 12. APPLICATION STATUS AND LOAN TYPE
+# 14. APPLICATION STATUS AND LOAN TYPE
 # =========================================================
 
 st.subheader("Application Analysis")
@@ -783,7 +924,7 @@ st.divider()
 
 
 # =========================================================
-# 13. BANK PERFORMANCE
+# 15. BANK PERFORMANCE
 # =========================================================
 
 st.subheader("Bank Performance")
@@ -830,7 +971,7 @@ st.divider()
 
 
 # =========================================================
-# 14. EXECUTIVE PERFORMANCE
+# 16. EXECUTIVE PERFORMANCE
 # =========================================================
 
 st.subheader("Executive Performance")
@@ -875,7 +1016,7 @@ st.divider()
 
 
 # =========================================================
-# 15. MONTHLY LOAN TREND
+# 17. MONTHLY LOAN TREND
 # =========================================================
 
 st.subheader("Monthly Loan Trend")
@@ -942,7 +1083,7 @@ st.divider()
 
 
 # =========================================================
-# 16. DETAILED LOAN RECORDS
+# 18. DETAILED LOAN RECORDS
 # =========================================================
 
 st.subheader("Detailed Loan Records")
@@ -968,7 +1109,7 @@ else:
 
 
 # =========================================================
-# 17. DOWNLOAD FILTERED DATA
+# 19. DOWNLOAD FILTERED DATA
 # =========================================================
 
 csv_data = filtered_df.to_csv(
@@ -985,13 +1126,12 @@ st.download_button(
 
 
 # =========================================================
-# 18. FOOTER
+# 20. FOOTER
 # =========================================================
 
 st.markdown("---")
 
-st.markdown(
-    """
+st.markdown("""
     <div style="
         text-align:center;
         color:#8996A8;
@@ -1002,6 +1142,4 @@ st.markdown(
         <br>
         Built with Python, Pandas, Plotly and Streamlit
     </div>
-    """,
-    unsafe_allow_html=True
-)
+""", unsafe_allow_html=True)
