@@ -35,8 +35,33 @@ st.markdown("""
     max-width: 100%;
 }
 
+/* HIDE STREAMLIT TOP TOOLBAR */
 header[data-testid="stHeader"] {
     background: #0B1220;
+    height: 0;
+    min-height: 0;
+}
+
+/* HIDE SHARE, STAR, EDIT AND OTHER TOOLBAR OPTIONS */
+[data-testid="stToolbar"] {
+    display: none !important;
+}
+
+/* HIDE STREAMLIT DECORATION */
+[data-testid="stDecoration"] {
+    display: none !important;
+}
+
+/* HIDE DEPLOY BUTTON */
+.stAppDeployButton {
+    display: none !important;
+}
+
+/* REMOVE DEFAULT TOP GAP */
+.block-container {
+    padding-top: 2rem !important;
+    padding-bottom: 1rem !important;
+    max-width: 100%;
 }
 
 /* SIDEBAR */
