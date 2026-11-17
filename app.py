@@ -1,385 +1,372 @@
 
-import streamlit as st
+import html
+from pathlib import Path
+
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
-import html
+import streamlit as st
 
-# =====================================================
-# 1. PAGE CONFIGURATION
-# =====================================================
+
+# ============================================================
+# JR FINANCIAL - LOAN PORTFOLIO ANALYTICS
+# DESIGN 1: CLEAN & MODERN
+# ============================================================
 
 st.set_page_config(
     page_title="JR Financial | Loan Portfolio Analytics",
     page_icon="📊",
     layout="wide",
-    initial_sidebar_state="expanded"
+    initial_sidebar_state="expanded",
 )
 
-# =====================================================
-# 2. DESIGN AND CSS
-# =====================================================
 
-st.markdown("""
-<style>
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+# ============================================================
+# 1. THEME
+# ============================================================
 
-.stApp {
-    background: #F2F5FA !important;
-    color: #172B4D;
-    font-family: 'Inter', sans-serif;
-}
+NAVY = "#102A4C"
+BLUE = "#2475F5"
+ORANGE = "#F59A23"
+GREEN = "#18A879"
+PURPLE = "#8665E8"
+RED = "#D95368"
 
-/* TOP BAR */
+TEXT = "#172B4D"
+MUTED = "#718096"
+BORDER = "#E7EDF5"
+PAGE_BG = "#F5F8FC"
 
-header[data-testid="stHeader"] {
-    background: #F2F5FA !important;
-    height: 3.5rem !important;
-    z-index: 999999 !important;
-}
-
-[data-testid="stToolbar"],
-[data-testid="stDecoration"],
-.stAppDeployButton {
-    display: none !important;
-}
-
-/* MAIN CONTENT SPACING */
-
-.block-container {
-    padding-top: 4.5rem !important;
-    padding-right: 1.5rem !important;
-    padding-bottom: 1rem !important;
-    padding-left: 1.5rem !important;
-    max-width: 100% !important;
-}
-
-/* SIDEBAR */
-
-[data-testid="stSidebar"] {
-    background: #FFFFFF !important;
-    border-right: 1px solid #E1E7F0;
-}
-
-[data-testid="stSidebar"] * {
-    color: #334766;
-}
-
-.brand-box {
-    padding: 15px 8px 22px;
-    border-bottom: 1px solid #E7ECF3;
-    margin-bottom: 20px;
-}
-
-.brand-kicker {
-    color: #4778E8;
-    font-size: 10px;
-    font-weight: 800;
-    letter-spacing: 2px;
-}
-
-.brand-title {
-    color: #172B4D;
-    font-size: 23px;
-    font-weight: 800;
-    margin-top: 5px;
-}
-
-.brand-subtitle {
-    color: #8493A9;
-    font-size: 10px;
-    margin-top: 4px;
-}
-
-/* PAGE HEADER */
-
-.page-title {
-    color: #172B4D;
-    font-size: 25px;
-    font-weight: 800;
-    margin-top: 8px !important;
-    padding-top: 5px !important;
-    margin-bottom: 3px;
-    position: relative;
-    z-index: 1;
-}
-
-.page-subtitle {
-    color: #71829C;
-    font-size: 12px;
-    margin-bottom: 16px;
-}
-
-/* FILTERS */
-
-.filter-label {
-    color: #8290A5;
-    font-size: 10px;
-    font-weight: 800;
-    letter-spacing: 1.4px;
-    margin: 12px 0;
-}
-
-div[data-testid="stSelectbox"] label,
-div[data-testid="stDateInput"] label,
-div[data-testid="stTextInput"] label {
-    color: #536780;
-    font-size: 11px;
-    font-weight: 600;
-}
-
-div[data-baseweb="select"] > div {
-    background: #FFFFFF;
-    border-color: #DCE4EF;
-    border-radius: 7px;
-}
-
-div[data-testid="stTextInput"] input,
-div[data-testid="stDateInput"] input {
-    background: #FFFFFF;
-    border-color: #DCE4EF;
-    border-radius: 7px;
-}
-
-/* CARDS */
-
-div[data-testid="stVerticalBlockBorderWrapper"] {
-    background: #FFFFFF !important;
-    border: 1px solid #DCE5F0;
-    border-radius: 15px;
-    box-shadow: 0 3px 12px rgba(31, 55, 90, 0.035);
-    padding: 10px 12px;
-}
-
-div[data-testid="stVerticalBlockBorderWrapper"] > div {
-    background: #FFFFFF !important;
-}
-
-/* CHARTS */
-
-div[data-testid="stPlotlyChart"],
-div[data-testid="stPlotlyChart"] > div {
-    background: #FFFFFF !important;
-    border-radius: 10px !important;
-}
-
-/* CHART HEADINGS */
-
-.card-heading {
-    color: #173253;
-    font-size: 14px;
-    font-weight: 750;
-    margin: 1px 0 2px;
-}
-
-.card-subheading {
-    color: #8291A6;
-    font-size: 10px;
-    margin-bottom: 8px;
-}
-
-/* KPI CARDS */
-
-.kpi-card {
-    background: #FFFFFF;
-    border: 1px solid #DCE5F0;
-    border-radius: 12px;
-    padding: 13px 15px;
-    min-height: 95px;
-    box-shadow: 0 2px 9px rgba(31, 55, 90, 0.03);
-}
-
-.kpi-label {
-    color: #8492A7;
-    font-size: 10px;
-    font-weight: 700;
-    letter-spacing: .5px;
-}
-
-.kpi-value {
-    color: #172B4D;
-    font-size: 23px;
-    font-weight: 800;
-    margin-top: 7px;
-}
-
-.kpi-note {
-    color: #28A879;
-    font-size: 10px;
-    margin-top: 3px;
-}
-
-/* STATUS ROWS */
-
-.status-row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 11px 0;
-    border-bottom: 1px solid #E9EEF5;
-    gap: 8px;
-}
-
-.status-left {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    min-width: 0;
-}
-
-.status-pill {
-    border-radius: 20px;
-    padding: 5px 10px;
-    font-size: 10px;
-    font-weight: 700;
-    white-space: nowrap;
-}
-
-.status-count {
-    color: #8291A6;
-    font-size: 10px;
-}
-
-.status-amount {
-    color: #173253;
-    font-size: 11px;
-    font-weight: 750;
-    white-space: nowrap;
-}
-
-/* PRIORITY ACTIONS */
-
-.action-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 10px 0;
-    border-bottom: 1px solid #EDF1F6;
-    gap: 10px;
-}
-
-.action-name {
-    color: #263D5B;
-    font-size: 11px;
-    font-weight: 650;
-}
-
-.action-detail {
-    color: #8A98AB;
-    font-size: 10px;
-    margin-top: 3px;
-}
-
-.action-tag {
-    border-radius: 20px;
-    padding: 5px 9px;
-    font-size: 9px;
-    font-weight: 700;
-    white-space: nowrap;
-}
-
-/* BUTTONS */
-
-.stButton button,
-.stDownloadButton button {
-    background: #4778E8;
-    color: white;
-    border: 1px solid #4778E8;
-    border-radius: 7px;
-    font-size: 11px;
-    font-weight: 700;
-}
-
-.stButton button:hover,
-.stDownloadButton button:hover {
-    background: #3266D5;
-    color: white;
-    border-color: #3266D5;
-}
-
-/* TABLE */
-
-[data-testid="stDataFrame"] {
-    border: 1px solid #DCE5F0;
-    border-radius: 10px;
-    overflow: hidden;
-}
-
-/* FOOTER */
-
-.footer {
-    color: #96A2B3;
-    text-align: center;
-    font-size: 10px;
-    padding: 15px 0 5px;
-}
-
-</style>
-""", unsafe_allow_html=True)
-
-
-# =====================================================
-# 3. CONSTANTS
-# =====================================================
-
-NAVIGATION = [
-    "Summary",
-    "Loan Types",
-    "Banks",
-    "Executives",
-    "Records",
-    "KPI Metrics"
-]
-
-REQUIRED_COLUMNS = [
-    "Customer Name",
-    "Type of Loan",
-    "Status",
-    "Loan Amount",
-    "Bank Name",
-    "Executive Name",
-    "Date"
-]
-
-COLORS = [
-    "#4778E8",
-    "#28C979",
-    "#8951F5",
-    "#F13D91",
-    "#F5AD3D",
-    "#24A9C5",
-    "#8393AA"
-]
-
-STATUS_STYLES = {
-    "Disbursed": ("#E0F6EC", "#16865B"),
-    "Approved": ("#E7F0FF", "#3269D1"),
-    "Pending": ("#FFF2D8", "#A66A00"),
-    "Rejected": ("#FFE6EB", "#CF4260"),
-    "Under Review": ("#F0E9FF", "#8152C9")
+STATUS_COLORS = {
+    "Disbursed": GREEN,
+    "Approved": BLUE,
+    "Under Review": PURPLE,
+    "Pending": ORANGE,
+    "Rejected": RED,
 }
 
 
-# =====================================================
-# 4. DATA CLEANING
-# =====================================================
+# ============================================================
+# 2. CUSTOM CSS
+# ============================================================
+
+st.markdown(
+    f"""
+    <style>
+
+    .stApp {{
+        background: {PAGE_BG};
+        color: {TEXT};
+    }}
+
+    .block-container {{
+        max-width: 100%;
+        padding-top: 1.6rem;
+        padding-bottom: 2rem;
+        padding-left: 1.8rem;
+        padding-right: 1.8rem;
+    }}
+
+    [data-testid="stHeader"] {{
+        background: {PAGE_BG};
+        height: 2.8rem;
+    }}
+
+    [data-testid="stDecoration"] {{
+        display: none;
+    }}
+
+    [data-testid="stSidebar"] {{
+        background: {NAVY};
+    }}
+
+    [data-testid="stSidebar"] > div:first-child {{
+        background: {NAVY};
+    }}
+
+    [data-testid="stSidebar"] * {{
+        color: #F7FAFF;
+    }}
+
+    [data-testid="stSidebar"] [data-testid="stRadio"] label {{
+        padding: 8px 10px;
+        border-radius: 9px;
+        transition: background 0.2s ease;
+    }}
+
+    [data-testid="stSidebar"] [data-testid="stRadio"] label:hover {{
+        background: rgba(255,255,255,0.10);
+    }}
+
+    [data-testid="stSidebar"] [data-testid="stRadio"] label:has(input:checked) {{
+        background: {BLUE};
+    }}
+
+    [data-testid="stSidebar"] [data-testid="stRadio"] label p {{
+        color: white !important;
+        font-weight: 600;
+    }}
+
+    [data-testid="stSidebar"] [data-testid="stFileUploader"] {{
+        background: rgba(255,255,255,0.06);
+        border-radius: 10px;
+        padding: 8px;
+    }}
+
+    [data-testid="stSidebar"] [data-testid="stButton"] button {{
+        color: white;
+        background: rgba(255,255,255,0.08);
+        border: 1px solid rgba(255,255,255,0.3);
+        border-radius: 9px;
+    }}
+
+    [data-testid="stSidebar"] [data-testid="stButton"] button:hover {{
+        background: rgba(255,255,255,0.16);
+        border-color: white;
+    }}
+
+    h1, h2, h3 {{
+        color: {NAVY} !important;
+        letter-spacing: -0.4px;
+    }}
+
+    h1 {{
+        font-size: 2rem !important;
+        font-weight: 750 !important;
+    }}
+
+    h2 {{
+        font-size: 1.25rem !important;
+        font-weight: 700 !important;
+    }}
+
+    h3 {{
+        font-size: 1.05rem !important;
+        font-weight: 700 !important;
+    }}
+
+    .jr-brand {{
+        text-align: center;
+        padding: 10px 5px 22px;
+        border-bottom: 1px solid rgba(255,255,255,0.15);
+        margin-bottom: 20px;
+    }}
+
+    .jr-logo {{
+        font-size: 42px;
+        font-weight: 850;
+        letter-spacing: -5px;
+        color: white;
+        line-height: 1.1;
+    }}
+
+    .jr-logo span {{
+        color: {ORANGE};
+    }}
+
+    .jr-brand-name {{
+        color: white;
+        font-size: 20px;
+        font-weight: 750;
+        margin-top: 5px;
+    }}
+
+    .jr-tagline {{
+        color: #C6D5E8;
+        font-size: 11px;
+        margin-top: 3px;
+    }}
+
+    .page-subtitle {{
+        color: {MUTED};
+        font-size: 14px;
+        margin-bottom: 18px;
+    }}
+
+    .eyebrow {{
+        color: {BLUE};
+        font-size: 10px;
+        font-weight: 800;
+        letter-spacing: 1.7px;
+        margin-bottom: 3px;
+    }}
+
+    .kpi-card {{
+        background: white;
+        border: 1px solid {BORDER};
+        border-radius: 13px;
+        padding: 16px;
+        min-height: 120px;
+        box-shadow: 0 2px 8px rgba(16,42,76,0.035);
+    }}
+
+    .kpi-top {{
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 10px;
+    }}
+
+    .kpi-icon {{
+        width: 34px;
+        height: 34px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 17px;
+        font-weight: 800;
+    }}
+
+    .kpi-label {{
+        color: #64748B;
+        font-size: 12px;
+        font-weight: 600;
+    }}
+
+    .kpi-value {{
+        color: {NAVY};
+        font-size: 23px;
+        font-weight: 800;
+        letter-spacing: -0.5px;
+    }}
+
+    .kpi-foot {{
+        color: #8995A6;
+        font-size: 11px;
+        margin-top: 5px;
+    }}
+
+    .panel-title {{
+        color: {NAVY};
+        font-size: 15px;
+        font-weight: 750;
+        margin-bottom: 3px;
+    }}
+
+    .panel-caption {{
+        color: {MUTED};
+        font-size: 11px;
+        margin-bottom: 8px;
+    }}
+
+    .insight-row {{
+        display: flex;
+        gap: 10px;
+        align-items: flex-start;
+        padding: 11px 0;
+        border-bottom: 1px solid #EEF2F7;
+        color: {TEXT};
+        font-size: 13px;
+    }}
+
+    .insight-dot {{
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: {ORANGE};
+        margin-top: 5px;
+        flex-shrink: 0;
+    }}
+
+    [data-testid="stDataFrame"] {{
+        border: 1px solid {BORDER};
+        border-radius: 10px;
+        overflow: hidden;
+    }}
+
+    [data-testid="stPlotlyChart"] {{
+        background: white;
+        border-radius: 10px;
+    }}
+
+    [data-testid="stDownloadButton"] button {{
+        border-radius: 9px;
+        border: 1px solid {BLUE};
+        color: {BLUE};
+        background: white;
+        font-weight: 650;
+    }}
+
+    [data-testid="stDownloadButton"] button:hover {{
+        color: white;
+        background: {BLUE};
+    }}
+
+    div[data-testid="stMetric"] {{
+        background: white;
+        border: 1px solid {BORDER};
+        border-radius: 12px;
+        padding: 12px 15px;
+    }}
+
+    @media (max-width: 900px) {{
+        .block-container {{
+            padding-left: 1rem;
+            padding-right: 1rem;
+        }}
+
+        .kpi-value {{
+            font-size: 18px;
+        }}
+    }}
+
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
+
+
+# ============================================================
+# 3. HELPER FUNCTIONS
+# ============================================================
+
+def money_inr(value):
+
+    value = float(value or 0)
+
+    if abs(value) >= 10000000:
+        return f"₹{value / 10000000:,.2f} Cr"
+
+    if abs(value) >= 100000:
+        return f"₹{value / 100000:,.2f} L"
+
+    return f"₹{value:,.0f}"
+
+
+def safe(value):
+    return html.escape(str(value))
+
 
 def clean_loan_data(data):
 
-    data = data.copy()
-    data = data.dropna(how="all")
-    data = data.dropna(axis=1, how="all")
+    data = data.dropna(axis=1, how="all").copy()
 
-    data.columns = data.columns.astype(str).str.strip()
+    data.columns = [
+        str(column).strip()
+        for column in data.columns
+    ]
+
+    required_columns = [
+        "Customer Name",
+        "Type of Loan",
+        "Status",
+        "Loan Amount",
+        "Bank Name",
+        "Executive Name",
+        "Date",
+    ]
 
     missing = [
-        col for col in REQUIRED_COLUMNS
-        if col not in data.columns
+        column
+        for column in required_columns
+        if column not in data.columns
     ]
 
     if missing:
         raise ValueError(
-            "Missing required columns: " + ", ".join(missing)
+            "Missing required columns: "
+            + ", ".join(missing)
         )
 
     text_columns = [
@@ -387,18 +374,20 @@ def clean_loan_data(data):
         "Type of Loan",
         "Status",
         "Bank Name",
-        "Executive Name"
+        "Executive Name",
     ]
 
-    for col in text_columns:
-        data[col] = (
-            data[col]
-            .fillna("")
+    for column in text_columns:
+
+        data[column] = (
+            data[column]
+            .fillna("Not specified")
             .astype(str)
             .str.strip()
+            .replace("", "Not specified")
         )
 
-    data["Loan Amount"] = (
+    amount = (
         data["Loan Amount"]
         .astype(str)
         .str.replace(",", "", regex=False)
@@ -409,1107 +398,1522 @@ def clean_loan_data(data):
     )
 
     data["Loan Amount"] = pd.to_numeric(
-        data["Loan Amount"],
+        amount,
         errors="coerce"
     )
 
     data["Date"] = pd.to_datetime(
         data["Date"],
-        dayfirst=True,
-        errors="coerce"
+        errors="coerce",
+        dayfirst=True
     )
 
-    data = data.dropna(subset=["Loan Amount", "Date"])
+    data = data.dropna(
+        subset=["Date", "Loan Amount"]
+    ).copy()
 
-    return data.reset_index(drop=True)
+    data["Loan Amount"] = data["Loan Amount"].clip(lower=0)
 
-
-# =====================================================
-# 5. HELPER FUNCTIONS
-# =====================================================
-
-def safe(value):
-    return html.escape(str(value))
+    return data
 
 
-def format_crore(value):
-    return f"₹{value / 10000000:.2f} Cr"
+def show_header(title, subtitle):
+
+    st.markdown(
+        f"""
+        <div class="eyebrow">JR FINANCIAL</div>
+        <h1>{safe(title)}</h1>
+        <div class="page-subtitle">{safe(subtitle)}</div>
+        """,
+        unsafe_allow_html=True
+    )
 
 
-def format_money(value):
-    return f"₹{value:,.0f}"
+def show_panel_title(title, subtitle=""):
+
+    st.markdown(
+        f"""
+        <div class="panel-title">{safe(title)}</div>
+        <div class="panel-caption">{safe(subtitle)}</div>
+        """,
+        unsafe_allow_html=True
+    )
 
 
-def show_kpi(label, value, note):
+def show_kpi(label, value, icon, color, background, note):
 
-    st.html(f"""
-    <div class="kpi-card">
-        <div class="kpi-label">{safe(label)}</div>
-        <div class="kpi-value">{safe(value)}</div>
-        <div class="kpi-note">{safe(note)}</div>
-    </div>
-    """)
+    st.markdown(
+        f"""
+        <div class="kpi-card">
+            <div class="kpi-top">
+                <div class="kpi-icon"
+                     style="color:{color};background:{background};">
+                    {icon}
+                </div>
+                <div class="kpi-label">{safe(label)}</div>
+            </div>
+
+            <div class="kpi-value">{safe(value)}</div>
+
+            <div class="kpi-foot">{safe(note)}</div>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
 
 
-def card_heading(title, subtitle=""):
+def add_kpis(data):
 
-    st.html(f"""
-    <div class="card-heading">{safe(title)}</div>
-    <div class="card-subheading">{safe(subtitle)}</div>
-    """)
+    total_apps = len(data)
+
+    total_value = data["Loan Amount"].sum()
+
+    disbursed = data[
+        data["Status"].str.casefold() == "disbursed"
+    ]
+
+    approved = data[
+        data["Status"].str.casefold() == "approved"
+    ]
+
+    disbursed_value = disbursed["Loan Amount"].sum()
+
+    approval_rate = (
+        (len(approved) + len(disbursed)) / total_apps * 100
+        if total_apps else 0
+    )
+
+    columns = st.columns(4, gap="medium")
+
+    kpis = [
+        (
+            "Total Applications",
+            f"{total_apps:,}",
+            "▤",
+            BLUE,
+            "#EAF2FF",
+            "Applications in selected records"
+        ),
+        (
+            "Loan Portfolio",
+            money_inr(total_value),
+            "₹",
+            ORANGE,
+            "#FFF3E2",
+            "Total application loan value"
+        ),
+        (
+            "Disbursed Amount",
+            money_inr(disbursed_value),
+            "✓",
+            GREEN,
+            "#E6F8F1",
+            "Value of disbursed applications"
+        ),
+        (
+            "Approval Rate",
+            f"{approval_rate:.1f}%",
+            "%",
+            PURPLE,
+            "#F0ECFF",
+            "Approved + disbursed applications"
+        ),
+    ]
+
+    for col, item in zip(columns, kpis):
+
+        with col:
+            show_kpi(*item)
 
 
-def chart_theme(fig, height=260):
+def chart_layout(fig, height=320):
 
     fig.update_layout(
         height=height,
-        autosize=True,
-        margin=dict(l=15, r=15, t=25, b=25),
-        paper_bgcolor="#FFFFFF",
-        plot_bgcolor="#FFFFFF",
+        paper_bgcolor="white",
+        plot_bgcolor="white",
         font=dict(
-            family="Inter, Arial",
-            size=10,
-            color="#75849A"
+            family="Arial",
+            color=TEXT,
+            size=11
+        ),
+        margin=dict(
+            l=12,
+            r=12,
+            t=15,
+            b=12
         ),
         hoverlabel=dict(
-            bgcolor="#173253",
-            font_color="#FFFFFF",
-            bordercolor="#173253"
-        ),
-        legend=dict(
-            font=dict(size=9, color="#65758C"),
-            bgcolor="#FFFFFF",
-            borderwidth=0
+            bgcolor=NAVY,
+            bordercolor=NAVY,
+            font=dict(color="white")
         )
     )
 
     fig.update_xaxes(
-        showgrid=False,
-        zeroline=False,
-        linecolor="#E5EAF1",
-        tickfont=dict(size=9, color="#8291A6"),
-        automargin=True
+        showgrid=True,
+        gridcolor="#EEF2F7",
+        zeroline=False
     )
 
     fig.update_yaxes(
-        showgrid=False,
-        zeroline=False,
-        linecolor="#E5EAF1",
-        tickfont=dict(size=9, color="#8291A6"),
-        automargin=True
+        showgrid=True,
+        gridcolor="#EEF2F7",
+        zeroline=False
     )
 
     return fig
 
 
-def show_chart(fig, height=260, key=None):
+def status_data(data):
 
-    fig = chart_theme(fig, height)
-
-    st.plotly_chart(
-        fig,
-        use_container_width=True,
-        config={
-            "displayModeBar": False,
-            "responsive": True
-        },
-        key=key
+    return (
+        data.groupby("Status", as_index=False)
+        .agg(
+            Applications=("Customer Name", "size"),
+            Loan_Value=("Loan Amount", "sum")
+        )
     )
 
 
-# =====================================================
-# 6. UPLOAD PAGE
-# =====================================================
+def monthly_chart(data):
 
-if "loan_df" not in st.session_state:
-
-    # The upload page uses st.html() to render HTML.
-    # The top spacing is controlled by block-container CSS.
-
-    st.html("""
-    <div style="
-        max-width:680px;
-        margin:20px auto 25px;
-        text-align:center;
-        font-family:Inter,Arial,sans-serif;
-    ">
-        <div style="
-            color:#4778E8;
-            font-size:12px;
-            font-weight:800;
-            letter-spacing:3px;
-        ">
-            JR FINANCIAL
-        </div>
-
-        <h1 style="
-            color:#172B4D;
-            font-size:36px;
-            font-weight:800;
-            margin:12px 0;
-        ">
-            Loan Portfolio Analytics
-        </h1>
-
-        <p style="
-            color:#71829C;
-            font-size:14px;
-            margin-top:8px;
-        ">
-            Enterprise Banking Intelligence Platform
-        </p>
-
-        <p style="
-            color:#71829C;
-            font-size:13px;
-            margin-top:18px;
-        ">
-            Upload your loan records to explore portfolio
-            performance, application status and trends.
-        </p>
-    </div>
-    """)
-
-    with st.container(border=True):
-
-        st.html("""
-        <div style="padding:5px 0 8px;">
-            <div style="
-                color:#172B4D;
-                font-size:17px;
-                font-weight:750;
-            ">
-                Upload Loan Portfolio
-            </div>
-            <div style="
-                color:#8291A6;
-                font-size:11px;
-                margin-top:5px;
-            ">
-                Select your Excel workbook to open the dashboard.
-            </div>
-        </div>
-        """)
-
-        uploaded_file = st.file_uploader(
-            "Choose Excel file",
-            type=["xlsx"],
-            key="landing_upload"
+    monthly = (
+        data.set_index("Date")
+        .resample("MS")
+        .agg(
+            Applications=("Customer Name", "size"),
+            Loan_Value=("Loan Amount", "sum")
         )
-
-        if uploaded_file is not None:
-
-            try:
-                raw_data = pd.read_excel(uploaded_file)
-                cleaned = clean_loan_data(raw_data)
-
-                if cleaned.empty:
-                    st.error("No valid records found in this workbook.")
-
-                else:
-                    st.session_state["loan_df"] = cleaned
-                    st.session_state["loan_filename"] = uploaded_file.name
-                    st.rerun()
-
-            except Exception as e:
-                st.error(f"Upload error: {e}")
-
-    st.stop()
-
-
-# =====================================================
-# 7. LOAD DATA
-# =====================================================
-
-df = st.session_state["loan_df"].copy()
-
-df["Month"] = df["Date"].dt.to_period("M")
-df["Month Year"] = df["Month"].astype(str)
-
-
-# =====================================================
-# 8. SIDEBAR NAVIGATION
-# =====================================================
-
-st.sidebar.html("""
-<div class="brand-box">
-    <div class="brand-kicker">JR FINANCIAL</div>
-    <div class="brand-title">Portfolio BI</div>
-    <div class="brand-subtitle">LOAN PORTFOLIO MANAGEMENT</div>
-</div>
-""")
-
-st.sidebar.html("""
-<div style="
-    font-size:10px;
-    color:#8795A9;
-    font-weight:800;
-    letter-spacing:1.5px;
-    margin-bottom:8px;
-">
-    MAIN MENU
-</div>
-""")
-
-page = st.sidebar.radio(
-    "Navigation",
-    NAVIGATION,
-    label_visibility="collapsed"
-)
-
-st.sidebar.divider()
-
-st.sidebar.html("""
-<div style="
-    font-size:10px;
-    color:#8795A9;
-    font-weight:800;
-    letter-spacing:1px;
-">
-    DATA SOURCE
-</div>
-""")
-
-st.sidebar.caption(
-    st.session_state.get("loan_filename", "Excel workbook")
-)
-
-st.sidebar.caption(f"{len(df):,} records loaded")
-
-if st.sidebar.button("Upload Another File", use_container_width=True):
-
-    for key in ["loan_df", "loan_filename", "landing_upload"]:
-        st.session_state.pop(key, None)
-
-    st.rerun()
-
-
-# =====================================================
-# 9. PAGE-WISE FILTERS
-# =====================================================
-
-PAGE_FILTERS = {
-    "Summary": [
-        "Date Range", "Bank", "Loan Type", "Status", "Executive"
-    ],
-    "Loan Types": [
-        "Date Range", "Loan Type", "Status", "Bank"
-    ],
-    "Banks": [
-        "Date Range", "Bank", "Loan Type", "Status"
-    ],
-    "Executives": [
-        "Date Range", "Executive", "Loan Type", "Status"
-    ],
-    "Records": [
-        "Date Range", "Customer", "Status",
-        "Bank", "Loan Type", "Executive"
-    ],
-    "KPI Metrics": [
-        "Date Range", "Bank", "Loan Type", "Executive"
-    ]
-}
-
-FILTER_COLUMNS = {
-    "Bank": "Bank Name",
-    "Loan Type": "Type of Loan",
-    "Status": "Status",
-    "Executive": "Executive Name"
-}
-
-
-def reset_page_filters(selected_page):
-
-    prefix = selected_page.lower().replace(" ", "_")
-
-    keys = [
-        f"{prefix}_date",
-        f"{prefix}_bank",
-        f"{prefix}_loan_type",
-        f"{prefix}_status",
-        f"{prefix}_executive",
-        f"{prefix}_customer"
-    ]
-
-    for key in keys:
-        st.session_state.pop(key, None)
-
-
-def display_filters(data, selected_page):
-
-    filters = PAGE_FILTERS[selected_page]
-    prefix = selected_page.lower().replace(" ", "_")
-
-    result = data.copy()
-
-    st.html("""
-    <div class="filter-label">
-        FILTERS FOR THIS PAGE
-    </div>
-    """)
-
-    columns = st.columns(
-        [1] * len(filters) + [0.65],
-        gap="small"
+        .reset_index()
     )
 
-    for i, filter_name in enumerate(filters):
+    fig = go.Figure()
 
-        with columns[i]:
+    fig.add_trace(
+        go.Scatter(
+            x=monthly["Date"],
+            y=monthly["Loan_Value"],
+            name="Loan Value",
+            mode="lines+markers",
+            line=dict(
+                color=BLUE,
+                width=3
+            ),
+            marker=dict(size=7),
+            fill="tozeroy",
+            fillcolor="rgba(36,117,245,0.10)",
+            hovertemplate=(
+                "%{x|%b %Y}<br>"
+                "Loan Value: ₹%{y:,.0f}"
+                "<extra></extra>"
+            )
+        )
+    )
 
-            if filter_name == "Date Range":
+    fig.update_layout(
+        hovermode="x unified",
+        showlegend=False
+    )
 
-                selected_dates = st.date_input(
-                    "Date Range",
-                    value=(
-                        data["Date"].min().date(),
-                        data["Date"].max().date()
-                    ),
-                    key=f"{prefix}_date"
+    fig.update_xaxes(
+        showgrid=False,
+        tickformat="%b %Y"
+    )
+
+    fig.update_yaxes(
+        tickprefix="₹",
+        tickformat="~s"
+    )
+
+    return chart_layout(fig, 330)
+
+
+def status_chart(data):
+
+    summary = status_data(data)
+
+    fig = px.pie(
+        summary,
+        names="Status",
+        values="Applications",
+        hole=0.63,
+        color="Status",
+        color_discrete_map=STATUS_COLORS
+    )
+
+    fig.update_traces(
+        textposition="inside",
+        textinfo="percent",
+        marker=dict(
+            line=dict(
+                color="white",
+                width=3
+            )
+        ),
+        hovertemplate=(
+            "<b>%{label}</b><br>"
+            "Applications: %{value}<br>"
+            "Share: %{percent}"
+            "<extra></extra>"
+        )
+    )
+
+    fig.update_layout(
+        annotations=[
+            dict(
+                text=(
+                    f"<b>{len(data):,}</b>"
+                    "<br><span style='font-size:11px'>Applications</span>"
+                ),
+                x=0.5,
+                y=0.5,
+                showarrow=False,
+                font=dict(
+                    size=20,
+                    color=NAVY
                 )
+            )
+        ],
+        legend=dict(
+            orientation="v",
+            y=0.5,
+            x=1
+        )
+    )
 
-                if (
-                    isinstance(selected_dates, (tuple, list))
-                    and len(selected_dates) == 2
-                ):
+    return chart_layout(fig, 330)
 
-                    start_date, end_date = selected_dates
 
-                    if start_date > end_date:
-                        st.error("Start date must be before end date.")
-                        st.stop()
+def horizontal_bar(data, name_column, value_column, color=BLUE, height=320):
 
-                    result = result[
-                        (result["Date"].dt.date >= start_date)
-                        & (result["Date"].dt.date <= end_date)
-                    ]
+    ordered = data.sort_values(
+        value_column,
+        ascending=True
+    )
 
-                else:
-                    st.info("Select both dates.")
-                    st.stop()
+    fig = px.bar(
+        ordered,
+        x=value_column,
+        y=name_column,
+        orientation="h",
+        color_discrete_sequence=[color],
+        text=ordered[value_column].map(money_inr)
+    )
 
-            elif filter_name in FILTER_COLUMNS:
+    fig.update_traces(
+        textposition="outside",
+        cliponaxis=False,
+        hovertemplate=(
+            "<b>%{y}</b><br>"
+            "Loan Value: ₹%{x:,.0f}"
+            "<extra></extra>"
+        )
+    )
 
-                column_name = FILTER_COLUMNS[filter_name]
-                key_name = filter_name.lower().replace(" ", "_")
+    fig.update_layout(
+        height=height,
+        showlegend=False,
+        margin=dict(l=8, r=65, t=12, b=10)
+    )
 
-                options = sorted(
-                    data[column_name].dropna().unique().tolist()
-                )
+    fig.update_xaxes(
+        showticklabels=False,
+        title=None
+    )
 
-                all_label = f"All {filter_name}s"
+    fig.update_yaxes(
+        showgrid=False,
+        title=None,
+        automargin=True
+    )
 
-                selected_value = st.selectbox(
-                    filter_name,
-                    [all_label] + options,
-                    key=f"{prefix}_{key_name}"
-                )
+    return chart_layout(fig, height)
 
-                if selected_value != all_label:
-                    result = result[
-                        result[column_name] == selected_value
-                    ]
 
-            elif filter_name == "Customer":
+def executive_summary(data):
 
-                search = st.text_input(
-                    "Customer Name",
-                    placeholder="Search customer",
-                    key=f"{prefix}_customer"
-                )
+    result = (
+        data.groupby("Executive Name", as_index=False)
+        .agg(
+            Applications=("Customer Name", "size"),
+            Loan_Value=("Loan Amount", "sum"),
+            Disbursed=(
+                "Status",
+                lambda x: (x.str.casefold() == "disbursed").sum()
+            )
+        )
+    )
 
-                if search.strip():
+    result["Disbursal Rate"] = (
+        result["Disbursed"]
+        / result["Applications"]
+        * 100
+    ).round(1)
 
-                    result = result[
-                        result["Customer Name"].str.contains(
-                            search.strip(),
-                            case=False,
-                            na=False
-                        )
-                    ]
+    return result.sort_values(
+        "Loan_Value",
+        ascending=False
+    )
 
-    with columns[-1]:
 
-        st.markdown(
-            "<div style='height:25px'></div>",
-            unsafe_allow_html=True
+def insights(data):
+
+    result = []
+
+    total = len(data)
+    total_value = data["Loan Amount"].sum()
+
+    if total == 0:
+        return result
+
+    types = (
+        data.groupby("Type of Loan")["Loan Amount"]
+        .sum()
+        .sort_values(ascending=False)
+    )
+
+    if len(types):
+
+        share = (
+            types.iloc[0] / total_value * 100
+            if total_value else 0
         )
 
-        st.button(
-            "Reset",
-            key=f"{prefix}_reset",
-            use_container_width=True,
-            on_click=reset_page_filters,
-            args=(selected_page,)
+        result.append(
+            f"{types.index[0]} is the largest loan category, "
+            f"representing {share:.1f}% of portfolio value."
         )
+
+    pending = (
+        data["Status"].str.casefold() == "pending"
+    ).sum()
+
+    review = (
+        data["Status"].str.casefold() == "under review"
+    ).sum()
+
+    if pending + review:
+
+        result.append(
+            f"{pending + review:,} applications are pending "
+            "or under review and may need follow-up."
+        )
+
+    banks = (
+        data.groupby("Bank Name")["Loan Amount"]
+        .sum()
+        .sort_values(ascending=False)
+    )
+
+    if len(banks):
+
+        result.append(
+            f"{banks.index[0]} has the highest loan value "
+            "among the selected bank records."
+        )
+
+    disbursed = (
+        data["Status"].str.casefold() == "disbursed"
+    ).sum()
+
+    result.append(
+        f"{disbursed / total * 100:.1f}% of selected "
+        "applications are marked as disbursed."
+    )
 
     return result
 
 
-# =====================================================
-# 10. PAGE HEADER
-# =====================================================
+# ============================================================
+# 4. SIDEBAR AND NAVIGATION
+# ============================================================
 
-PAGE_TITLES = {
-    "Summary": "Loan Portfolio Dashboard",
-    "Loan Types": "Loan Type Analysis",
-    "Banks": "Bank Performance",
-    "Executives": "Executive Performance",
-    "Records": "Loan Application Records",
-    "KPI Metrics": "Portfolio KPI Metrics"
-}
+PAGES = [
+    "Summary",
+    "Loan Types",
+    "Banks",
+    "Executives",
+    "Records",
+    "KPI Metrics"
+]
 
-PAGE_SUBTITLES = {
-    "Summary": "Executive overview · All business teams",
-    "Loan Types": "Loan category trends and portfolio distribution",
-    "Banks": "Bank-wise funding and application performance",
-    "Executives": "Executive-wise portfolio and productivity",
-    "Records": "Search, review and export loan applications",
-    "KPI Metrics": "Financial and operational performance indicators"
-}
+with st.sidebar:
 
-st.html(f"""
-<div class="page-title">{safe(PAGE_TITLES[page])}</div>
-<div class="page-subtitle">{safe(PAGE_SUBTITLES[page])}</div>
-""")
+    st.markdown(
+        """
+        <div class="jr-brand">
+            <div class="jr-logo">J<span>R</span></div>
+            <div class="jr-brand-name">JR Financial</div>
+            <div class="jr-tagline">Grow. Finance. Prosper.</div>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+    page = st.radio(
+        "Navigation",
+        PAGES,
+        index=0,
+        label_visibility="collapsed"
+    )
+
+    st.markdown("---")
+
+    st.markdown("**DATA SOURCE**")
+
+    uploaded_file = st.file_uploader(
+        "Upload Excel workbook",
+        type=["xlsx", "xls"],
+        key="jr_upload"
+    )
+
+    if uploaded_file is not None:
+
+        st.session_state["jr_uploaded_file"] = (
+            uploaded_file.getvalue()
+        )
+
+        st.session_state["jr_uploaded_name"] = (
+            uploaded_file.name
+        )
+
+    if "jr_uploaded_file" in st.session_state:
+
+        source_name = st.session_state.get(
+            "jr_uploaded_name",
+            "Uploaded workbook"
+        )
+
+        source_bytes = st.session_state["jr_uploaded_file"]
+
+        st.caption(f"Loaded: {source_name}")
+
+    else:
+
+        source_path = Path(__file__).with_name(
+            "loan_records.xlsx"
+        )
+
+        if source_path.exists():
+
+            source_name = source_path.name
+            source_bytes = None
+
+            st.caption(f"Using local file: {source_name}")
+
+        else:
+
+            source_name = None
+            source_bytes = None
+
+            st.info("Upload an Excel workbook to begin.")
+
+    if st.button(
+        "↻ Upload another file",
+        use_container_width=True
+    ):
+
+        st.session_state.pop("jr_uploaded_file", None)
+        st.session_state.pop("jr_uploaded_name", None)
+        st.rerun()
 
 
-# =====================================================
-# 11. APPLY FILTERS
-# =====================================================
+# ============================================================
+# 5. LOAD DATA
+# ============================================================
 
-filtered = display_filters(df, page)
+try:
 
-if filtered.empty:
-    st.warning("No records found for the selected filters.")
+    if source_bytes is not None:
+
+        from io import BytesIO
+
+        raw_data = pd.read_excel(
+            BytesIO(source_bytes)
+        )
+
+    elif source_name is not None:
+
+        raw_data = pd.read_excel(
+            Path(__file__).with_name("loan_records.xlsx")
+        )
+
+    else:
+
+        show_header(
+            "Loan Portfolio Analytics",
+            "Upload your loan records to explore portfolio performance."
+        )
+
+        st.info(
+            "Upload an Excel workbook using the left sidebar."
+        )
+
+        st.stop()
+
+    df = clean_loan_data(raw_data)
+
+    if df.empty:
+
+        st.error(
+            "No valid loan records found. "
+            "Please check your Date and Loan Amount columns."
+        )
+
+        st.stop()
+
+except Exception as error:
+
+    st.error(f"Unable to load the workbook: {error}")
     st.stop()
 
 
-# =====================================================
-# 12. COMMON METRICS
-# =====================================================
+# ============================================================
+# 6. PAGE-SPECIFIC FILTERS
+# ============================================================
 
-total_apps = len(filtered)
-total_amount = filtered["Loan Amount"].sum()
+PAGE_FILTERS = {
 
-disbursed = filtered[
-    filtered["Status"].str.lower() == "disbursed"
-]
+    "Summary": [
+        "Date Range",
+        "Bank",
+        "Loan Type",
+        "Status",
+        "Executive"
+    ],
 
-approved = filtered[
-    filtered["Status"].str.lower() == "approved"
-]
+    "Loan Types": [
+        "Date Range",
+        "Loan Type",
+        "Status",
+        "Bank"
+    ],
 
-pending = filtered[
-    filtered["Status"].str.lower() == "pending"
-]
+    "Banks": [
+        "Date Range",
+        "Bank",
+        "Loan Type",
+        "Status"
+    ],
 
-rejected = filtered[
-    filtered["Status"].str.lower() == "rejected"
-]
+    "Executives": [
+        "Date Range",
+        "Executive",
+        "Loan Type",
+        "Status"
+    ],
 
-under_review = filtered[
-    filtered["Status"].str.lower() == "under review"
-]
+    "Records": [
+        "Date Range",
+        "Customer",
+        "Status",
+        "Bank",
+        "Loan Type",
+        "Executive"
+    ],
 
-disbursed_amount = disbursed["Loan Amount"].sum()
+    "KPI Metrics": [
+        "Date Range",
+        "Bank",
+        "Loan Type",
+        "Executive"
+    ]
+}
 
-approval_rate = len(approved) / total_apps * 100
-disbursement_rate = len(disbursed) / total_apps * 100
-average_loan = filtered["Loan Amount"].mean()
 
+FILTER_COLUMNS = {
 
-# =====================================================
-# 13. SUMMARY PAGE
-# =====================================================
+    "Bank": "Bank Name",
+    "Loan Type": "Type of Loan",
+    "Status": "Status",
+    "Executive": "Executive Name",
+    "Customer": "Customer Name"
 
-if page == "Summary":
+}
 
-    left, right = st.columns([1.5, 1], gap="small")
 
-    with left:
+def reset_page_filters(prefix):
 
-        with st.container(border=True):
+    for key in list(st.session_state.keys()):
 
-            card_heading(
-                "Monthly funding recorded",
-                "Loan portfolio value by month · Selected period"
-            )
+        if key.startswith(prefix + "_filter_"):
 
-            monthly_data = filtered.copy()
+            del st.session_state[key]
 
-            monthly_data["Month"] = (
-                monthly_data["Date"].dt.to_period("M")
-            )
 
-            monthly = (
-                monthly_data
-                .groupby("Month", as_index=False)
-                .agg(Total_Funding=("Loan Amount", "sum"))
-                .sort_values("Month")
-            )
+def apply_filters(data, selected_page):
 
-            if not monthly.empty:
+    prefix = selected_page.lower().replace(" ", "_")
 
-                monthly["Month Label"] = (
-                    monthly["Month"].astype(str)
-                )
+    filters = PAGE_FILTERS[selected_page]
 
-                monthly["Funding Cr"] = (
-                    monthly["Total_Funding"] / 10000000
-                )
-
-                fig = px.bar(
-                    monthly,
-                    x="Month Label",
-                    y="Funding Cr",
-                    text="Funding Cr",
-                    color_discrete_sequence=["#4778E8"]
-                )
-
-                fig.update_traces(
-                    texttemplate="%{text:.2f}",
-                    textposition="outside",
-                    hovertemplate=(
-                        "<b>%{x}</b><br>"
-                        "Funding: ₹%{y:.2f} Cr"
-                        "<extra></extra>"
-                    ),
-                    cliponaxis=False
-                )
-
-                fig.update_layout(
-                    showlegend=False,
-                    xaxis_title=None,
-                    yaxis_title="₹ Crores",
-                    yaxis=dict(
-                        showgrid=True,
-                        gridcolor="#EDF1F6",
-                        zeroline=False
-                    )
-                )
-
-                show_chart(fig, 260, "monthly_funding_chart")
-
-            else:
-                st.info("No monthly funding data is available.")
-
-            st.caption(
-                "₹ Cr · Aggregated from loan application dates"
-            )
-
-    with right:
-
-        with st.container(border=True):
-
-            card_heading(
-                "Current stage distribution",
-                "Application count and requested loan amount"
-            )
-
-            for status in [
-                "Approved",
-                "Disbursed",
-                "Pending",
-                "Under Review",
-                "Rejected"
-            ]:
-
-                subset = filtered[
-                    filtered["Status"].str.lower() == status.lower()
-                ]
-
-                count = len(subset)
-                amount = subset["Loan Amount"].sum()
-
-                bg, fg = STATUS_STYLES[status]
-
-                st.html(f"""
-                <div class="status-row">
-                    <div class="status-left">
-                        <span class="status-pill"
-                            style="background:{bg};color:{fg};">
-                            {safe(status)}
-                        </span>
-                        <span class="status-count">
-                            {count} applications
-                        </span>
-                    </div>
-                    <div class="status-amount">
-                        {format_crore(amount)}
-                    </div>
-                </div>
-                """)
-
-            st.html("""
-            <p style="
-                font-size:10px;
-                color:#8291A6;
-                margin-top:12px;
-            ">
-                Stage totals use requested proposal amounts.
-                Disbursed amounts are tracked separately.
-            </p>
-            """)
-
-    left, right = st.columns([1.5, 1], gap="small")
-
-    with left:
-
-        with st.container(border=True):
-
-            card_heading(
-                "Priority actions",
-                "Applications requiring attention"
-            )
-
-            action_data = filtered[
-                filtered["Status"].str.lower().isin(
-                    ["pending", "under review"]
-                )
-            ].copy()
-
-            action_data = action_data.sort_values(
-                "Date",
-                ascending=True
-            ).head(5)
-
-            if action_data.empty:
-
-                st.html("""
-                <div style="
-                    text-align:center;
-                    color:#8291A6;
-                    font-size:12px;
-                    padding:45px 0;
-                ">
-                    No open actions.
-                </div>
-                """)
-
-            else:
-
-                for _, row in action_data.iterrows():
-
-                    status = row["Status"]
-
-                    bg, fg = STATUS_STYLES.get(
-                        status,
-                        ("#EEF2F7", "#536780")
-                    )
-
-                    st.html(f"""
-                    <div class="action-row">
-                        <div>
-                            <div class="action-name">
-                                {safe(row["Customer Name"])}
-                            </div>
-                            <div class="action-detail">
-                                {safe(row["Type of Loan"])}
-                                · {safe(row["Bank Name"])}
-                                · {row["Date"].strftime("%d %b %Y")}
-                            </div>
-                        </div>
-                        <span class="action-tag"
-                            style="background:{bg};color:{fg};">
-                            {safe(status)}
-                        </span>
-                    </div>
-                    """)
-
-    with right:
-
-        with st.container(border=True):
-
-            executive_counts = (
-                filtered.groupby("Executive Name")
-                .size()
-                .reset_index(name="Applications")
-                .sort_values("Applications", ascending=False)
-            )
-
-            total_cases = executive_counts["Applications"].sum()
-
-            card_heading(
-                "Business Team Cases",
-                f"{total_cases:,} applications"
-            )
-
-            if not executive_counts.empty:
-
-                fig = go.Figure(
-                    go.Pie(
-                        labels=executive_counts["Executive Name"],
-                        values=executive_counts["Applications"],
-                        hole=0.67,
-                        sort=False,
-                        marker=dict(
-                            colors=COLORS * (
-                                len(executive_counts) // len(COLORS) + 1
-                            ),
-                            line=dict(color="#FFFFFF", width=3)
-                        ),
-                        textinfo="none",
-                        hovertemplate=(
-                            "%{label}<br>"
-                            "Applications: %{value}"
-                            "<extra></extra>"
-                        )
-                    )
-                )
-
-                fig.update_layout(
-                    annotations=[
-                        dict(
-                            text=f"<b>{total_cases}</b>",
-                            x=0.5,
-                            y=0.53,
-                            font=dict(size=28, color="#172B4D"),
-                            showarrow=False
-                        ),
-                        dict(
-                            text="Total cases",
-                            x=0.5,
-                            y=0.40,
-                            font=dict(size=10, color="#8291A6"),
-                            showarrow=False
-                        )
-                    ],
-                    showlegend=True,
-                    legend=dict(
-                        orientation="v",
-                        x=0.95,
-                        y=0.5,
-                        xanchor="left",
-                        font=dict(size=9),
-                        bgcolor="#FFFFFF"
-                    ),
-                    paper_bgcolor="#FFFFFF",
-                    plot_bgcolor="#FFFFFF"
-                )
-
-                show_chart(fig, 230, "business_team_chart")
-
-
-# =====================================================
-# 14. LOAN TYPES PAGE
-# =====================================================
-
-elif page == "Loan Types":
-
-    summary = (
-        filtered.groupby("Type of Loan")
-        .agg(
-            Applications=("Customer Name", "count"),
-            Loan_Amount=("Loan Amount", "sum"),
-            Average_Loan=("Loan Amount", "mean")
-        )
-        .reset_index()
-        .sort_values("Loan_Amount", ascending=False)
-    )
-
-    a, b, c = st.columns(3)
-
-    with a:
-        show_kpi("LOAN CATEGORIES", str(len(summary)), "Categories in selection")
-
-    with b:
-        show_kpi("APPLICATIONS", f"{total_apps:,}", "Total applications")
-
-    with c:
-        show_kpi("TOTAL FUNDING", format_crore(total_amount), "Requested loan amount")
-
-    left, right = st.columns(2)
-
-    with left:
-
-        with st.container(border=True):
-
-            card_heading("Loan amount by category")
-
-            chart_data = summary.sort_values("Loan_Amount")
-
-            fig = px.bar(
-                chart_data,
-                x="Loan_Amount",
-                y="Type of Loan",
-                orientation="h",
-                color_discrete_sequence=["#4778E8"]
-            )
-
-            fig.update_traces(
-                hovertemplate="%{y}<br>Amount: ₹%{x:,.0f}<extra></extra>"
-            )
-
-            show_chart(fig, 320, "loan_type_amount")
-
-    with right:
-
-        with st.container(border=True):
-
-            card_heading("Applications by loan category")
-
-            fig = px.pie(
-                summary,
-                names="Type of Loan",
-                values="Applications",
-                hole=0.62,
-                color_discrete_sequence=COLORS
-            )
-
-            fig.update_traces(textinfo="percent")
-
-            show_chart(fig, 320, "loan_type_distribution")
-
-    st.markdown("#### Loan Category Details")
-
-    display = summary.copy()
-    display["Loan_Amount"] = display["Loan_Amount"].apply(format_money)
-    display["Average_Loan"] = display["Average_Loan"].apply(format_money)
-
-    st.dataframe(display, use_container_width=True, hide_index=True)
-
-
-# =====================================================
-# 15. BANKS PAGE
-# =====================================================
-
-elif page == "Banks":
-
-    summary = (
-        filtered.groupby("Bank Name")
-        .agg(
-            Applications=("Customer Name", "count"),
-            Loan_Amount=("Loan Amount", "sum"),
-            Average_Loan=("Loan Amount", "mean")
-        )
-        .reset_index()
-        .sort_values("Loan_Amount", ascending=False)
-    )
-
-    a, b, c = st.columns(3)
-
-    with a:
-        show_kpi("BANKS", str(len(summary)), "Banks in selection")
-
-    with b:
-        show_kpi("APPLICATIONS", f"{total_apps:,}", "Total applications")
-
-    with c:
-        show_kpi("TOTAL FUNDING", format_crore(total_amount), "Loan portfolio")
-
-    left, right = st.columns(2)
-
-    with left:
-
-        with st.container(border=True):
-
-            card_heading("Bank-wise loan funding")
-
-            chart_data = summary.sort_values("Loan_Amount")
-
-            fig = px.bar(
-                chart_data,
-                x="Loan_Amount",
-                y="Bank Name",
-                orientation="h",
-                color_discrete_sequence=["#4778E8"]
-            )
-
-            show_chart(fig, 340, "bank_funding")
-
-    with right:
-
-        with st.container(border=True):
-
-            card_heading("Applications by bank")
-
-            fig = px.pie(
-                summary,
-                names="Bank Name",
-                values="Applications",
-                hole=0.62,
-                color_discrete_sequence=COLORS
-            )
-
-            show_chart(fig, 340, "bank_applications")
-
-    st.markdown("#### Bank Performance Details")
-
-    display = summary.copy()
-    display["Loan_Amount"] = display["Loan_Amount"].apply(format_money)
-    display["Average_Loan"] = display["Average_Loan"].apply(format_money)
-
-    st.dataframe(display, use_container_width=True, hide_index=True)
-
-
-# =====================================================
-# 16. EXECUTIVES PAGE
-# =====================================================
-
-elif page == "Executives":
-
-    summary = (
-        filtered.groupby("Executive Name")
-        .agg(
-            Applications=("Customer Name", "count"),
-            Loan_Amount=("Loan Amount", "sum"),
-            Average_Loan=("Loan Amount", "mean")
-        )
-        .reset_index()
-        .sort_values("Applications", ascending=False)
-    )
-
-    a, b, c = st.columns(3)
-
-    with a:
-        show_kpi("EXECUTIVES", str(len(summary)), "Active executives")
-
-    with b:
-        show_kpi("APPLICATIONS", f"{total_apps:,}", "Managed applications")
-
-    with c:
-        show_kpi("TOTAL FUNDING", format_crore(total_amount), "Loan portfolio")
-
-    left, right = st.columns(2)
-
-    with left:
-
-        with st.container(border=True):
-
-            card_heading("Executive-wise loan portfolio")
-
-            chart_data = summary.sort_values("Loan_Amount")
-
-            fig = px.bar(
-                chart_data,
-                x="Loan_Amount",
-                y="Executive Name",
-                orientation="h",
-                color_discrete_sequence=["#28A879"]
-            )
-
-            show_chart(fig, 340, "executive_funding")
-
-    with right:
-
-        with st.container(border=True):
-
-            card_heading("Executive-wise application distribution")
-
-            fig = go.Figure(
-                go.Pie(
-                    labels=summary["Executive Name"],
-                    values=summary["Applications"],
-                    hole=0.65,
-                    marker=dict(
-                        colors=COLORS * (
-                            len(summary) // len(COLORS) + 1
-                        ),
-                        line=dict(color="#FFFFFF", width=3)
-                    )
-                )
-            )
-
-            fig.update_layout(
-                annotations=[
-                    dict(
-                        text=f"<b>{total_apps}</b>",
-                        x=0.5,
-                        y=0.52,
-                        font=dict(size=27, color="#172B4D"),
-                        showarrow=False
-                    ),
-                    dict(
-                        text="Applications",
-                        x=0.5,
-                        y=0.39,
-                        font=dict(size=10, color="#8291A6"),
-                        showarrow=False
-                    )
-                ],
-                paper_bgcolor="#FFFFFF",
-                plot_bgcolor="#FFFFFF"
-            )
-
-            show_chart(fig, 340, "executive_distribution")
-
-    st.markdown("#### Executive Performance Details")
-
-    display = summary.copy()
-    display["Loan_Amount"] = display["Loan_Amount"].apply(format_money)
-    display["Average_Loan"] = display["Average_Loan"].apply(format_money)
-
-    st.dataframe(display, use_container_width=True, hide_index=True)
-
-
-# =====================================================
-# 17. RECORDS PAGE
-# =====================================================
-
-elif page == "Records":
+    selected_values = {}
 
     with st.container(border=True):
 
-        card_heading(
-            "Loan Application Database",
-            f"{len(filtered):,} matching records"
+        st.markdown(
+            "**FILTER DATA**"
         )
 
-        display = filtered.copy()
-        display["Date"] = display["Date"].dt.strftime("%d-%b-%Y")
+        columns = st.columns(
+            len(filters),
+            gap="small"
+        )
+
+        for column, filter_name in zip(columns, filters):
+
+            key = (
+                f"{prefix}_filter_"
+                f"{filter_name.lower().replace(' ', '_')}"
+            )
+
+            with column:
+
+                if filter_name == "Date Range":
+
+                    min_date = data["Date"].min().date()
+                    max_date = data["Date"].max().date()
+
+                    date_value = st.date_input(
+                        "Date range",
+                        value=(min_date, max_date),
+                        min_value=min_date,
+                        max_value=max_date,
+                        key=key
+                    )
+
+                    if (
+                        isinstance(date_value, (tuple, list))
+                        and len(date_value) == 2
+                    ):
+
+                        selected_values["start_date"] = date_value[0]
+                        selected_values["end_date"] = date_value[1]
+
+                    else:
+
+                        selected_values["start_date"] = date_value
+                        selected_values["end_date"] = date_value
+
+                else:
+
+                    column_name = FILTER_COLUMNS[filter_name]
+
+                    options = sorted(
+                        data[column_name]
+                        .dropna()
+                        .astype(str)
+                        .unique()
+                        .tolist()
+                    )
+
+                    selected_values[filter_name] = st.multiselect(
+                        filter_name,
+                        options,
+                        default=options,
+                        key=key,
+                        placeholder=f"All {filter_name.lower()}s"
+                    )
+
+        reset_col = st.columns([1, 6])[0]
+
+        with reset_col:
+
+            st.button(
+                "Reset filters",
+                key=f"{prefix}_reset",
+                on_click=reset_page_filters,
+                args=(prefix,),
+                use_container_width=True
+            )
+
+    result = data[
+        data["Date"].dt.date.between(
+            selected_values["start_date"],
+            selected_values["end_date"]
+        )
+    ].copy()
+
+    for filter_name, values in selected_values.items():
+
+        if filter_name in FILTER_COLUMNS:
+
+            result = result[
+                result[FILTER_COLUMNS[filter_name]].isin(values)
+            ]
+
+    return result
+
+
+# ============================================================
+# 7. PAGE HEADERS
+# ============================================================
+
+PAGE_INFO = {
+
+    "Summary": (
+        "Loan Portfolio Analytics",
+        "A clear view of applications, portfolio value and business performance."
+    ),
+
+    "Loan Types": (
+        "Loan Type Analysis",
+        "Compare application volumes and portfolio value across loan categories."
+    ),
+
+    "Banks": (
+        "Bank Performance",
+        "Review bank-wise application volumes and portfolio value."
+    ),
+
+    "Executives": (
+        "Executive Performance",
+        "Understand team contribution and disbursement performance."
+    ),
+
+    "Records": (
+        "Loan Records",
+        "Search, review and export loan application data."
+    ),
+
+    "KPI Metrics": (
+        "Portfolio KPI Metrics",
+        "Track approval, disbursement and portfolio indicators."
+    )
+
+}
+
+
+title, subtitle = PAGE_INFO[page]
+
+show_header(title, subtitle)
+
+filtered = apply_filters(df, page)
+
+if filtered.empty:
+
+    st.warning(
+        "No records match the selected filters. "
+        "Please adjust your filters."
+    )
+
+    st.stop()
+
+
+# ============================================================
+# 8. COMMON CALCULATIONS
+# ============================================================
+
+total_apps = len(filtered)
+
+total_value = filtered["Loan Amount"].sum()
+
+disbursed_df = filtered[
+    filtered["Status"].str.casefold() == "disbursed"
+]
+
+approved_df = filtered[
+    filtered["Status"].str.casefold() == "approved"
+]
+
+pending_df = filtered[
+    filtered["Status"].str.casefold() == "pending"
+]
+
+review_df = filtered[
+    filtered["Status"].str.casefold() == "under review"
+]
+
+rejected_df = filtered[
+    filtered["Status"].str.casefold() == "rejected"
+]
+
+disbursed_value = disbursed_df["Loan Amount"].sum()
+
+approval_rate = (
+    (len(approved_df) + len(disbursed_df))
+    / total_apps * 100
+)
+
+disbursal_rate = (
+    len(disbursed_df) / total_apps * 100
+)
+
+
+# ============================================================
+# 9. SUMMARY PAGE
+# ============================================================
+
+if page == "Summary":
+
+    add_kpis(filtered)
+
+    st.markdown("")
+
+    left, right = st.columns(
+        [1.7, 1],
+        gap="medium"
+    )
+
+    with left:
+
+        with st.container(border=True):
+
+            show_panel_title(
+                "Portfolio Trend",
+                "Monthly loan value across the selected date range"
+            )
+
+            st.plotly_chart(
+                monthly_chart(filtered),
+                use_container_width=True,
+                config={
+                    "displayModeBar": False,
+                    "responsive": True
+                },
+                key="summary_monthly"
+            )
+
+    with right:
+
+        with st.container(border=True):
+
+            show_panel_title(
+                "Loan Status Distribution",
+                "Share of applications by status"
+            )
+
+            st.plotly_chart(
+                status_chart(filtered),
+                use_container_width=True,
+                config={
+                    "displayModeBar": False,
+                    "responsive": True
+                },
+                key="summary_status"
+            )
+
+    left, right = st.columns(
+        [1.2, 1],
+        gap="medium"
+    )
+
+    with left:
+
+        with st.container(border=True):
+
+            show_panel_title(
+                "Loan Types",
+                "Portfolio value by loan category"
+            )
+
+            type_data = (
+                filtered.groupby("Type of Loan", as_index=False)
+                .agg(
+                    Loan_Value=("Loan Amount", "sum"),
+                    Applications=("Customer Name", "size")
+                )
+            )
+
+            st.plotly_chart(
+                horizontal_bar(
+                    type_data,
+                    "Type of Loan",
+                    "Loan_Value",
+                    BLUE,
+                    300
+                ),
+                use_container_width=True,
+                config={"displayModeBar": False},
+                key="summary_types"
+            )
+
+    with right:
+
+        with st.container(border=True):
+
+            show_panel_title(
+                "Top Executives",
+                "Ranked by total loan value"
+            )
+
+            executive_data = executive_summary(filtered).head(6)
+
+            for rank, row in enumerate(
+                executive_data.itertuples(index=False),
+                start=1
+            ):
+
+                st.markdown(
+                    f"""
+                    <div style="
+                        display:flex;
+                        align-items:center;
+                        justify-content:space-between;
+                        padding:11px 2px;
+                        border-bottom:1px solid #EEF2F7;
+                    ">
+
+                        <div style="
+                            display:flex;
+                            align-items:center;
+                            gap:11px;
+                        ">
+
+                            <div style="
+                                width:27px;
+                                height:27px;
+                                border-radius:50%;
+                                background:#EAF2FF;
+                                color:#2475F5;
+                                display:flex;
+                                align-items:center;
+                                justify-content:center;
+                                font-size:11px;
+                                font-weight:800;
+                            ">
+                                {rank}
+                            </div>
+
+                            <span style="
+                                font-size:13px;
+                                font-weight:650;
+                                color:#172B4D;
+                            ">
+                                {safe(row[0])}
+                            </span>
+
+                        </div>
+
+                        <b style="
+                            font-size:13px;
+                            color:#102A4C;
+                        ">
+                            {money_inr(row[2])}
+                        </b>
+
+                    </div>
+                    """,
+                    unsafe_allow_html=True
+                )
+
+    left, right = st.columns(
+        [1, 1],
+        gap="medium"
+    )
+
+    with left:
+
+        with st.container(border=True):
+
+            show_panel_title(
+                "Bank Performance",
+                "Top banks by loan portfolio value"
+            )
+
+            bank_data = (
+                filtered.groupby("Bank Name", as_index=False)
+                .agg(
+                    Loan_Value=("Loan Amount", "sum"),
+                    Applications=("Customer Name", "size")
+                )
+                .sort_values("Loan_Value", ascending=False)
+                .head(8)
+            )
+
+            st.plotly_chart(
+                horizontal_bar(
+                    bank_data,
+                    "Bank Name",
+                    "Loan_Value",
+                    ORANGE,
+                    300
+                ),
+                use_container_width=True,
+                config={"displayModeBar": False},
+                key="summary_banks"
+            )
+
+    with right:
+
+        with st.container(border=True):
+
+            show_panel_title(
+                "Key Insights",
+                "Highlights from the selected records"
+            )
+
+            for insight in insights(filtered):
+
+                st.markdown(
+                    f"""
+                    <div class="insight-row">
+                        <span class="insight-dot"></span>
+                        <span>{safe(insight)}</span>
+                    </div>
+                    """,
+                    unsafe_allow_html=True
+                )
+
+
+# ============================================================
+# 10. LOAN TYPES PAGE
+# ============================================================
+
+elif page == "Loan Types":
+
+    add_kpis(filtered)
+
+    type_data = (
+        filtered.groupby("Type of Loan", as_index=False)
+        .agg(
+            Applications=("Customer Name", "size"),
+            Loan_Value=("Loan Amount", "sum"),
+            Average_Loan=("Loan Amount", "mean")
+        )
+        .sort_values("Loan_Value", ascending=False)
+    )
+
+    left, right = st.columns(
+        [1.3, 1],
+        gap="medium"
+    )
+
+    with left:
+
+        with st.container(border=True):
+
+            show_panel_title(
+                "Loan Value by Category",
+                "Total portfolio value by loan type"
+            )
+
+            st.plotly_chart(
+                horizontal_bar(
+                    type_data,
+                    "Type of Loan",
+                    "Loan_Value",
+                    BLUE,
+                    350
+                ),
+                use_container_width=True,
+                config={"displayModeBar": False},
+                key="loan_type_value"
+            )
+
+    with right:
+
+        with st.container(border=True):
+
+            show_panel_title(
+                "Application Mix",
+                "Share of applications by loan type"
+            )
+
+            fig = px.pie(
+                type_data,
+                names="Type of Loan",
+                values="Applications",
+                hole=0.58,
+                color_discrete_sequence=[
+                    BLUE,
+                    ORANGE,
+                    GREEN,
+                    PURPLE,
+                    "#49A7C8",
+                    "#D76D91",
+                    "#8795A8"
+                ]
+            )
+
+            fig.update_traces(
+                textposition="inside",
+                textinfo="percent"
+            )
+
+            st.plotly_chart(
+                chart_layout(fig, 350),
+                use_container_width=True,
+                config={"displayModeBar": False},
+                key="loan_type_mix"
+            )
+
+    with st.container(border=True):
+
+        show_panel_title(
+            "Loan Type Details",
+            "Application count, portfolio value and average loan size"
+        )
+
+        table = type_data.rename(
+            columns={
+                "Type of Loan": "Loan Type",
+                "Loan_Value": "Portfolio Value (₹)",
+                "Average_Loan": "Average Loan (₹)"
+            }
+        )
 
         st.dataframe(
-            display,
+            table,
             use_container_width=True,
-            height=470,
-            hide_index=True
+            hide_index=True,
+            column_config={
+                "Portfolio Value (₹)": st.column_config.NumberColumn(
+                    format="₹%,.0f"
+                ),
+                "Average Loan (₹)": st.column_config.NumberColumn(
+                    format="₹%,.0f"
+                )
+            }
         )
 
+
+# ============================================================
+# 11. BANKS PAGE
+# ============================================================
+
+elif page == "Banks":
+
+    add_kpis(filtered)
+
+    bank_data = (
+        filtered.groupby("Bank Name", as_index=False)
+        .agg(
+            Applications=("Customer Name", "size"),
+            Loan_Value=("Loan Amount", "sum"),
+            Average_Loan=("Loan Amount", "mean")
+        )
+        .sort_values("Loan_Value", ascending=False)
+    )
+
+    left, right = st.columns(
+        [1.4, 1],
+        gap="medium"
+    )
+
+    with left:
+
+        with st.container(border=True):
+
+            show_panel_title(
+                "Bank-wise Portfolio",
+                "Total loan value by bank"
+            )
+
+            st.plotly_chart(
+                horizontal_bar(
+                    bank_data,
+                    "Bank Name",
+                    "Loan_Value",
+                    BLUE,
+                    370
+                ),
+                use_container_width=True,
+                config={"displayModeBar": False},
+                key="bank_portfolio"
+            )
+
+    with right:
+
+        with st.container(border=True):
+
+            show_panel_title(
+                "Applications by Bank",
+                "Share of selected applications"
+            )
+
+            fig = px.pie(
+                bank_data,
+                names="Bank Name",
+                values="Applications",
+                hole=0.58,
+                color_discrete_sequence=[
+                    BLUE,
+                    ORANGE,
+                    GREEN,
+                    PURPLE,
+                    "#49A7C8",
+                    "#D76D91",
+                    "#8795A8"
+                ]
+            )
+
+            fig.update_traces(
+                textposition="inside",
+                textinfo="percent"
+            )
+
+            st.plotly_chart(
+                chart_layout(fig, 370),
+                use_container_width=True,
+                config={"displayModeBar": False},
+                key="bank_mix"
+            )
+
+    with st.container(border=True):
+
+        show_panel_title(
+            "Bank Performance Details",
+            "Ranked by portfolio value"
+        )
+
+        bank_table = bank_data.rename(
+            columns={
+                "Bank Name": "Bank",
+                "Loan_Value": "Portfolio Value (₹)",
+                "Average_Loan": "Average Loan (₹)"
+            }
+        )
+
+        st.dataframe(
+            bank_table,
+            use_container_width=True,
+            hide_index=True,
+            column_config={
+                "Portfolio Value (₹)": st.column_config.NumberColumn(
+                    format="₹%,.0f"
+                ),
+                "Average Loan (₹)": st.column_config.NumberColumn(
+                    format="₹%,.0f"
+                )
+            }
+        )
+
+
+# ============================================================
+# 12. EXECUTIVES PAGE
+# ============================================================
+
+elif page == "Executives":
+
+    add_kpis(filtered)
+
+    executive_data = executive_summary(filtered)
+
+    left, right = st.columns(
+        [1.35, 1],
+        gap="medium"
+    )
+
+    with left:
+
+        with st.container(border=True):
+
+            show_panel_title(
+                "Executive Portfolio",
+                "Total loan value handled by each executive"
+            )
+
+            st.plotly_chart(
+                horizontal_bar(
+                    executive_data,
+                    "Executive Name",
+                    "Loan_Value",
+                    BLUE,
+                    370
+                ),
+                use_container_width=True,
+                config={"displayModeBar": False},
+                key="executive_portfolio"
+            )
+
+    with right:
+
+        with st.container(border=True):
+
+            show_panel_title(
+                "Application Contribution",
+                "Number of applications handled"
+            )
+
+            contribution = executive_data.sort_values(
+                "Applications",
+                ascending=False
+            )
+
+            fig = px.bar(
+                contribution,
+                x="Executive Name",
+                y="Applications",
+                color_discrete_sequence=[ORANGE],
+                text="Applications"
+            )
+
+            fig.update_traces(
+                textposition="outside",
+                cliponaxis=False
+            )
+
+            fig.update_layout(
+                xaxis_tickangle=-35
+            )
+
+            st.plotly_chart(
+                chart_layout(fig, 370),
+                use_container_width=True,
+                config={"displayModeBar": False},
+                key="executive_contribution"
+            )
+
+    with st.container(border=True):
+
+        show_panel_title(
+            "Executive Performance Details",
+            "Application and disbursement performance"
+        )
+
+        executive_table = executive_data.rename(
+            columns={
+                "Executive Name": "Executive",
+                "Loan_Value": "Portfolio Value (₹)",
+                "Disbursed": "Disbursed Applications"
+            }
+        )
+
+        st.dataframe(
+            executive_table,
+            use_container_width=True,
+            hide_index=True,
+            column_config={
+                "Portfolio Value (₹)": st.column_config.NumberColumn(
+                    format="₹%,.0f"
+                ),
+                "Disbursal Rate": st.column_config.NumberColumn(
+                    format="%.1f%%"
+                )
+            }
+        )
+
+
+# ============================================================
+# 13. RECORDS PAGE
+# ============================================================
+
+elif page == "Records":
+
+    add_kpis(filtered)
+
+    with st.container(border=True):
+
+        show_panel_title(
+            "Search Loan Records",
+            "Search by customer, bank, loan type, status or executive"
+        )
+
+        search = st.text_input(
+            "Search records",
+            placeholder=(
+                "Type a customer name, bank, loan category "
+                "or executive..."
+            ),
+            label_visibility="collapsed"
+        )
+
+        detail = filtered.copy()
+
+        if search.strip():
+
+            searchable_columns = [
+                "Customer Name",
+                "Bank Name",
+                "Type of Loan",
+                "Executive Name",
+                "Status"
+            ]
+
+            mask = detail[searchable_columns].apply(
+                lambda column: column.astype(str).str.contains(
+                    search.strip(),
+                    case=False,
+                    na=False
+                )
+            ).any(axis=1)
+
+            detail = detail[mask]
+
+        st.caption(
+            f"Showing {len(detail):,} of {len(filtered):,} records"
+        )
+
+        display = detail.copy()
+
+        display["Date"] = display["Date"].dt.strftime(
+            "%d-%b-%Y"
+        )
+
+        if "Loan Amount" in display.columns:
+
+            display["Loan Amount"] = (
+                display["Loan Amount"].map(money_inr)
+            )
+
+        preferred_columns = [
+            "Sr. No.",
+            "Customer Name",
+            "Type of Loan",
+            "Status",
+            "Loan Amount",
+            "Bank Name",
+            "Executive Name",
+            "Date"
+        ]
+
+        columns = [
+            column
+            for column in preferred_columns
+            if column in display.columns
+        ]
+
+        st.dataframe(
+            display[columns],
+            use_container_width=True,
+            hide_index=True,
+            height=470
+        )
+
+        csv_data = detail.to_csv(
+            index=False
+        ).encode("utf-8-sig")
+
         st.download_button(
-            "Download Filtered Records",
-            data=filtered.to_csv(index=False).encode("utf-8"),
-            file_name="JR_Financial_Loan_Records.csv",
+            "Download filtered records (CSV)",
+            data=csv_data,
+            file_name="jr_financial_filtered_records.csv",
             mime="text/csv"
         )
 
 
-# =====================================================
-# 18. KPI METRICS PAGE
-# =====================================================
+# ============================================================
+# 14. KPI METRICS PAGE
+# ============================================================
 
 elif page == "KPI Metrics":
 
-    a, b, c, d = st.columns(4)
+    add_kpis(filtered)
 
-    with a:
-        show_kpi(
-            "TOTAL APPLICATIONS",
-            f"{total_apps:,}",
-            "Selected applications"
-        )
+    average_loan = filtered["Loan Amount"].mean()
 
-    with b:
-        show_kpi(
-            "APPROVAL RATE",
-            f"{approval_rate:.1f}%",
-            "Approved / total"
-        )
+    metric_columns = st.columns(4)
 
-    with c:
-        show_kpi(
-            "DISBURSEMENT RATE",
-            f"{disbursement_rate:.1f}%",
-            "Disbursed / total"
-        )
+    extra_metrics = [
+        ("Average Loan Size", money_inr(average_loan)),
+        ("Disbursement Rate", f"{disbursal_rate:.1f}%"),
+        ("Pending Applications", f"{len(pending_df):,}"),
+        ("Under Review", f"{len(review_df):,}")
+    ]
 
-    with d:
-        show_kpi(
-            "AVERAGE LOAN",
-            format_money(average_loan),
-            "Average loan amount"
-        )
+    for column, (label, value) in zip(
+        metric_columns,
+        extra_metrics
+    ):
+
+        with column:
+
+            st.metric(
+                label,
+                value
+            )
 
     left, right = st.columns(2)
 
@@ -1517,76 +1921,135 @@ elif page == "KPI Metrics":
 
         with st.container(border=True):
 
-            card_heading("Application status comparison")
-
-            status_data = (
-                filtered["Status"]
-                .value_counts()
-                .reset_index()
+            show_panel_title(
+                "Status Breakdown",
+                "Application count by status"
             )
 
-            status_data.columns = ["Status", "Applications"]
+            summary = status_data(filtered)
 
             fig = px.bar(
-                status_data,
+                summary,
                 x="Status",
                 y="Applications",
                 color="Status",
-                color_discrete_sequence=COLORS
+                color_discrete_map=STATUS_COLORS,
+                text="Applications"
             )
 
-            fig.update_layout(showlegend=False)
+            fig.update_traces(
+                textposition="outside",
+                cliponaxis=False
+            )
 
-            show_chart(fig, 300, "kpi_status_chart")
+            st.plotly_chart(
+                chart_layout(fig, 340),
+                use_container_width=True,
+                config={"displayModeBar": False},
+                key="kpi_status"
+            )
 
     with right:
 
         with st.container(border=True):
 
-            card_heading("Financial portfolio distribution")
-
-            financial = pd.DataFrame({
-                "Category": [
-                    "Disbursed",
-                    "Other applications"
-                ],
-                "Amount": [
-                    disbursed_amount,
-                    max(total_amount - disbursed_amount, 0)
-                ]
-            })
-
-            fig = px.pie(
-                financial,
-                names="Category",
-                values="Amount",
-                hole=0.65,
-                color_discrete_sequence=["#28C979", "#4778E8"]
+            show_panel_title(
+                "Portfolio by Status",
+                "Loan value associated with each status"
             )
 
-            show_chart(fig, 300, "kpi_financial_chart")
+            summary = status_data(filtered)
 
-    a, b, c = st.columns(3)
+            fig = px.pie(
+                summary,
+                names="Status",
+                values="Loan_Value",
+                hole=0.58,
+                color="Status",
+                color_discrete_map=STATUS_COLORS
+            )
 
-    with a:
-        st.metric("Total Loan Amount", format_crore(total_amount))
+            fig.update_traces(
+                textposition="inside",
+                textinfo="percent"
+            )
 
-    with b:
-        st.metric("Disbursed Amount", format_crore(disbursed_amount))
+            st.plotly_chart(
+                chart_layout(fig, 340),
+                use_container_width=True,
+                config={"displayModeBar": False},
+                key="kpi_portfolio"
+            )
 
-    with c:
-        st.metric(
-            "Unique Customers",
-            f"{filtered['Customer Name'].nunique():,}"
+    with st.container(border=True):
+
+        show_panel_title(
+            "KPI Definitions",
+            "How the dashboard calculates key metrics"
         )
 
+        definitions = [
+            (
+                "Loan Portfolio",
+                "Sum of Loan Amount across all filtered application records."
+            ),
+            (
+                "Disbursed Amount",
+                "Sum of Loan Amount where Status is Disbursed."
+            ),
+            (
+                "Approval Rate",
+                "Approved plus Disbursed applications divided by total applications."
+            ),
+            (
+                "Disbursement Rate",
+                "Disbursed applications divided by total applications."
+            ),
+            (
+                "Average Loan Size",
+                "Average Loan Amount across the filtered records."
+            )
+        ]
 
-# =====================================================
-# 19. FOOTER
-# =====================================================
+        for label, description in definitions:
 
-st.html("""
-<div class="footer">
-    JR FINANCIAL · ENTERPRISE LOAN PORTFOLIO ANALYTICS
-</div>
-""")
+            st.markdown(
+                f"""
+                <div class="insight-row">
+                    <span class="insight-dot"></span>
+                    <span>
+                        <b>{safe(label)}:</b>
+                        {safe(description)}
+                    </span>
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
+
+
+# ============================================================
+# 15. FOOTER
+# ============================================================
+
+st.markdown(
+    """
+    <div style="
+        border-top:1px solid #E7EDF5;
+        margin-top:25px;
+        padding-top:12px;
+        display:flex;
+        justify-content:space-between;
+        gap:12px;
+        flex-wrap:wrap;
+    ">
+        <span style="font-size:11px;color:#8793A4;">
+            JR Financial · Loan Portfolio Analytics
+        </span>
+
+        <span style="font-size:11px;color:#8793A4;">
+            Figures are based on the uploaded loan records and selected filters.
+        </span>
+    </div>
+    """,
+    unsafe_allow_html=True
+)
