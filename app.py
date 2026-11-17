@@ -1,128 +1,96 @@
-        )
 
-        approved = int(
-            status_counts.get("Approved", 0)
-        )
-
-        rejected = int(
-            status_counts.get("Rejected", 0)
-        )
-
-        disbursement_rate = (
-            disbursed / total * 100
-            if total else 0
-        )
-
-        approval_rate = (
-            approved / total * 100
-            if total else 0
-        )
-
-        rejection_rate = (
-            rejected / total * 100
-            if total else 0
-        )
-
-        metric_cols = st.columns(
-            3,
-            gap="medium"
-        )
-
-        with metric_cols[0]:
-
-            show_kpi(
-                "Disbursement Rate",
-                f"{disbursement_rate:.1f}%",
-                "Disbursed / total applications"
-            )
-
-        with metric_cols[1]:
-
-            show_kpi(
-                "Approval Rate",
-                f"{approval_rate:.1f}%",
-                "Approved / total applications"
-            )
-
-        with metric_cols[2]:
-
-            show_kpi(
-                "Rejection Rate",
-                f"{rejection_rate:.1f}%",
-                "Rejected / total applications"
-            )
-
-        st.write("")
-
-        show_panel_title("Application Status Breakdown")
-
-        status_breakdown = (
-            status_counts
-            .rename_axis("Status")
-            .reset_index(name="Applications")
-        )
-
-        fig = px.bar(
-            status_breakdown,
-            x="Status",
-            y="Applications",
-            color="Status",
-            color_discrete_map=STATUS_COLORS,
-            text="Applications"
-        )
-
-        fig.update_traces(
-            textposition="outside"
-        )
-
-        fig.update_layout(
-            showlegend=False
-        )
-
-        st.plotly_chart(
-            chart_layout(fig, 370),
-            use_container_width=True
-        )
-
-    if amount_col and type_col:
-
-        show_panel_title("Loan Amount by Category")
-
-        category_metrics = (
-            filtered_df.groupby(type_col)[amount_col]
-            .agg(["count", "sum", "mean"])
-            .reset_index()
-        )
-
-        category_metrics.columns = [
-            "Loan Type",
-            "Applications",
-            "Total Loan Amount",
-            "Average Loan Amount"
-        ]
-
-        category_metrics["Total Loan Amount"] = (
-            category_metrics["Total Loan Amount"].apply(money_inr)
-        )
-
-        category_metrics["Average Loan Amount"] = (
-            category_metrics["Average Loan Amount"].apply(money_inr)
-        )
-
-        st.dataframe(
-            category_metrics,
-            use_container_width=True,
-            hide_index=True
-        )
-
+import streamlit as st
+import pandas as pd
+import plotly.express as px
+from pathlib import Path
+from io import BytesIO
+import html
 
 # =========================================================
-# 19. FOOTER
+# 1. PAGE CONFIGURATION
+# =========================================================
+
+st.set_page_config(
+    page_title="JR Financial | Loan Portfolio Analytics",
+    page_icon="📊",
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
+
+# =========================================================
+# 2. SESSION STATE
+# =========================================================
+
+DEFAULTS = {
+    "dashboard_entered": False,
+    "loan_data_bytes": None,
+    "loan_sheet": None,
+    "main_navigation": "Summary"
+}
+
+for key, value in DEFAULTS.items():
+    if key not in st.session_state:
+        st.session_state[key] = value
+
+# =========================================================
+# 3. THEME COLORS
+# =========================================================
+
+NAVY = "#38285F"
+BLUE = "#62508F"
+ORANGE = "#F2B900"
+GREEN = "#35AE69"
+PURPLE = "#7763A8"
+RED = "#E47D83"
+
+TEXT = "#242033"
+MUTED = "#92909D"
+BORDER = "#ECEAF1"
+PAGE_BG = "#F1EFF6"
+
+STATUS_COLORS = {
+    "Disbursed": GREEN,
+    "Approved": BLUE,
+    "Under Review": ORANGE,
+    "Pending": PURPLE,
+    "Rejected": RED
+}
+
+# =========================================================
+# 4. GLOBAL CSS
 # =========================================================
 
 st.markdown(
-    """
-    <div class="footer">
-        JR Financial · Loan Portfolio Analytics
-    </div>
-    """,
+    f"""
+    <style>
+    :root {{
+        --jr-purple: #38285F;
+        --jr-purple-light: #62508F;
+        --jr-lavender: #F1EFF6;
+        --jr-text: #242033;
+        --jr-muted: #92909D;
+        --jr-border: #ECEAF1;
+    }}
+
+    .stApp {{
+        background: var(--jr-lavender);
+        color: var(--jr-text);
+    }}
+
+    [data-testid="stHeader"] {{
+        background: transparent;
+        height: 2.4rem;
+    }}
+
+    [data-testid="stToolbar"] {{ right: 1rem; }}
+
+    .block-container {{
+        padding-top: 1.45rem;
+        padding-bottom: 2rem;
+        max-width: 1680px;
+    }}
+
+    section[data-testid="stSidebar"] {{
+        background: linear-gradient(180deg, #38285F 0%, #493878 68%, #38285F 100%);
+        border-right: 0;
+        min-width: 245px;
