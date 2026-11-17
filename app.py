@@ -120,29 +120,6 @@ header[data-testid="stHeader"] {
     margin: 15px 0 9px 2px;
 }
 
-/* TOP BAR */
-
-.topbar {
-    background: #111D32;
-    border: 1px solid #243650;
-    border-radius: 10px;
-    padding: 12px 16px;
-    margin-bottom: 15px;
-}
-
-.topbar-brand {
-    color: #FFFFFF;
-    font-size: 15px;
-    font-weight: 800;
-    letter-spacing: 1px;
-}
-
-.topbar-caption {
-    color: #91A2BB;
-    font-size: 9px;
-    margin-top: 3px;
-}
-
 /* KPI CARDS */
 
 .kpi-card {
@@ -393,17 +370,14 @@ def clean_loan_data(data):
 # =========================================================
 
 def format_crore(value):
-
     return f"₹{value / 10000000:.2f} Cr"
 
 
 def format_money(value):
-
     return f"₹{value:,.0f}"
 
 
 def safe_html(value):
-
     return html.escape(str(value))
 
 
@@ -612,7 +586,6 @@ if "loan_df" not in st.session_state:
 df = st.session_state["loan_df"].copy()
 
 df["Month"] = df["Date"].dt.to_period("M")
-
 df["Month Year"] = df["Month"].astype(str)
 
 
@@ -673,19 +646,9 @@ if st.sidebar.button(
 
 
 # =========================================================
-# 11. TOP HEADER
+# 11. MAIN DASHBOARD HEADER
+# TOP BRANDING BANNER REMOVED
 # =========================================================
-
-st.markdown("""
-<div class="topbar">
-    <div class="topbar-brand">
-        JR FINANCIAL
-    </div>
-    <div class="topbar-caption">
-        ENTERPRISE BANKING ANALYTICS
-    </div>
-</div>
-""", unsafe_allow_html=True)
 
 st.markdown(
     '<div class="page-title">Loan Portfolio Dashboard</div>',
@@ -794,8 +757,10 @@ with search_col:
 
 with reset_col:
 
-    st.markdown("<div style='height:25px'></div>",
-                unsafe_allow_html=True)
+    st.markdown(
+        "<div style='height:25px'></div>",
+        unsafe_allow_html=True
+    )
 
     st.button(
         "Reset Filters",
@@ -926,12 +891,9 @@ if page == "Summary":
         unsafe_allow_html=True
     )
 
-    # KPI CARDS
-
     k1, k2, k3, k4 = st.columns(4, gap="small")
 
     with k1:
-
         show_kpi(
             "TOTAL APPLICATIONS",
             f"{total_apps:,}",
@@ -939,7 +901,6 @@ if page == "Summary":
         )
 
     with k2:
-
         show_kpi(
             "TOTAL LOAN PORTFOLIO",
             format_crore(total_amount),
@@ -947,7 +908,6 @@ if page == "Summary":
         )
 
     with k3:
-
         show_kpi(
             "DISBURSED AMOUNT",
             format_crore(disbursed_amount),
@@ -955,14 +915,11 @@ if page == "Summary":
         )
 
     with k4:
-
         show_kpi(
             "PENDING APPLICATIONS",
             f"{len(pending):,}",
             "Applications awaiting action"
         )
-
-    # SECONDARY METRICS
 
     st.markdown(
         '<div class="section-label">PORTFOLIO HEALTH</div>',
@@ -972,32 +929,18 @@ if page == "Summary":
     s1, s2, s3, s4 = st.columns(4)
 
     with s1:
-        st.metric(
-            "Approved",
-            f"{len(approved):,}"
-        )
+        st.metric("Approved", f"{len(approved):,}")
 
     with s2:
-        st.metric(
-            "Rejected",
-            f"{len(rejected):,}"
-        )
+        st.metric("Rejected", f"{len(rejected):,}")
 
     with s3:
-        st.metric(
-            "Under Review",
-            f"{len(under_review):,}"
-        )
+        st.metric("Under Review", f"{len(under_review):,}")
 
     with s4:
-        st.metric(
-            "Approval Rate",
-            f"{approval_rate:.1f}%"
-        )
+        st.metric("Approval Rate", f"{approval_rate:.1f}%")
 
-    # =====================================================
     # CHART ROW 1
-    # =====================================================
 
     st.markdown(
         '<div class="section-label">PORTFOLIO PERFORMANCE</div>',
@@ -1032,10 +975,7 @@ if page == "Summary":
                     y=monthly["Loan Amount"],
                     name="Loan Amount",
                     mode="lines+markers",
-                    line=dict(
-                        color="#3B82F6",
-                        width=3
-                    ),
+                    line=dict(color="#3B82F6", width=3),
                     marker=dict(size=6),
                     fill="tozeroy",
                     fillcolor="rgba(59,130,246,0.12)",
@@ -1094,9 +1034,7 @@ if page == "Summary":
 
             display_chart(fig, 260)
 
-    # =====================================================
     # CHART ROW 2
-    # =====================================================
 
     c3, c4 = st.columns(2, gap="small")
 
@@ -1223,9 +1161,7 @@ if page == "Summary":
 
             display_chart(fig, 250)
 
-    # =====================================================
     # CHART ROW 3
-    # =====================================================
 
     c5, c6 = st.columns(2, gap="small")
 
