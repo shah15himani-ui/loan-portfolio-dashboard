@@ -14,7 +14,7 @@ st.set_page_config(
     page_title="JR Financial | Loan Portfolio Analytics",
     page_icon="📊",
     layout="wide",
-    initial_sidebar_state="collapsed"
+    initial_sidebar_state="expanded"
 )
 
 # =========================================================
@@ -36,17 +36,17 @@ for key, value in DEFAULTS.items():
 # 3. THEME COLORS
 # =========================================================
 
-NAVY = "#102A4C"
-BLUE = "#2475F5"
-ORANGE = "#F59A23"
-GREEN = "#18A879"
-PURPLE = "#8665E8"
-RED = "#D95368"
+NAVY = "#38285F"
+BLUE = "#62508F"
+ORANGE = "#F2B900"
+GREEN = "#35AE69"
+PURPLE = "#7763A8"
+RED = "#E47D83"
 
-TEXT = "#172B4D"
-MUTED = "#718096"
-BORDER = "#E7EDF5"
-PAGE_BG = "#F5F8FC"
+TEXT = "#242033"
+MUTED = "#92909D"
+BORDER = "#ECEAF1"
+PAGE_BG = "#F1EFF6"
 
 STATUS_COLORS = {
     "Disbursed": GREEN,
@@ -63,154 +63,222 @@ STATUS_COLORS = {
 st.markdown(
     f"""
     <style>
+    :root {{
+        --jr-purple: #38285F;
+        --jr-purple-light: #62508F;
+        --jr-lavender: #F1EFF6;
+        --jr-text: #242033;
+        --jr-muted: #92909D;
+        --jr-border: #ECEAF1;
+    }}
 
     .stApp {{
-        background-color: {PAGE_BG};
+        background: var(--jr-lavender);
+        color: var(--jr-text);
     }}
 
     [data-testid="stHeader"] {{
         background: transparent;
-        height: 3rem;
+        height: 2.4rem;
     }}
 
+    [data-testid="stToolbar"] {{ right: 1rem; }}
+
     .block-container {{
-        padding-top: 2rem;
+        padding-top: 1.45rem;
         padding-bottom: 2rem;
-        max-width: 1600px;
+        max-width: 1680px;
     }}
 
     section[data-testid="stSidebar"] {{
-        background-color: {NAVY};
-        border-right: 1px solid #233F61;
+        background: linear-gradient(180deg, #38285F 0%, #493878 68%, #38285F 100%);
+        border-right: 0;
+        min-width: 245px;
+    }}
+
+    section[data-testid="stSidebar"] > div {{
+        background: transparent;
+        padding: 1.5rem 1rem;
     }}
 
     section[data-testid="stSidebar"] * {{
-        color: white;
+        color: #FFFFFF;
+    }}
+
+    section[data-testid="stSidebar"] [data-testid="stRadio"] > label {{
+        color: #DCD5EB;
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: 1.5px;
+        margin: 1.2rem 0 .5rem;
+    }}
+
+    section[data-testid="stSidebar"] [data-testid="stRadio"] div[role="radiogroup"] {{
+        gap: .28rem;
     }}
 
     section[data-testid="stSidebar"] [data-testid="stRadio"] label {{
-        padding: 9px 10px;
-        border-radius: 8px;
+        padding: 10px 12px;
+        border-radius: 10px;
+        transition: background .2s ease;
     }}
 
     section[data-testid="stSidebar"] [data-testid="stRadio"] label:hover {{
-        background-color: #24466D;
+        background: rgba(255,255,255,.12);
+    }}
+
+    section[data-testid="stSidebar"] [data-testid="stRadio"] label p {{
+        font-size: 13px;
+        font-weight: 600;
     }}
 
     .brand {{
-        font-size: 25px;
-        font-weight: 800;
-        letter-spacing: 1px;
+        font-size: 22px;
+        font-weight: 850;
+        letter-spacing: 1.1px;
         color: white;
-        margin-bottom: 3px;
+        margin: 7px 0 4px;
     }}
 
     .brand-sub {{
-        font-size: 10px;
-        letter-spacing: 2px;
-        color: #B8C9DD;
-        margin-bottom: 20px;
+        font-size: 9px;
+        letter-spacing: 1.8px;
+        color: #C9C0DE;
+        margin-bottom: 27px;
     }}
 
     .page-eyebrow {{
-        color: {BLUE};
-        font-size: 12px;
+        color: #75639D;
+        font-size: 10px;
         font-weight: 800;
         letter-spacing: 2px;
-        margin-bottom: 7px;
+        margin: 4px 0 6px;
     }}
 
     .page-title {{
-        color: {TEXT};
-        font-size: 32px;
+        color: var(--jr-text);
+        font-size: 27px;
         line-height: 1.2;
         font-weight: 800;
-        margin: 0 0 7px 0;
+        margin: 0 0 6px;
     }}
 
     .page-description {{
-        color: {MUTED};
-        font-size: 14px;
-        margin-bottom: 24px;
+        color: var(--jr-muted);
+        font-size: 13px;
+        margin-bottom: 20px;
     }}
 
     .kpi-card {{
+        --accent: #62508F;
+        position: relative;
+        overflow: hidden;
         background: #FFFFFF;
-        border: 1px solid {BORDER};
-        border-radius: 14px;
-        padding: 18px 19px;
-        min-height: 118px;
-        box-shadow: 0 3px 12px rgba(16, 42, 76, 0.035);
+        border: 1px solid var(--jr-border);
+        border-radius: 13px;
+        padding: 17px 18px 15px 21px;
+        min-height: 112px;
+        box-shadow: 0 5px 18px rgba(54, 39, 86, .045);
+    }}
+
+    .kpi-card:before {{
+        content: "";
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: 5px;
+        background: var(--accent);
     }}
 
     .kpi-label {{
-        color: {MUTED};
-        font-size: 12px;
-        font-weight: 700;
-        margin-bottom: 12px;
+        color: #777482;
+        font-size: 11px;
+        font-weight: 650;
+        margin-bottom: 11px;
     }}
 
     .kpi-value {{
-        color: {TEXT};
+        color: var(--jr-text);
         font-size: 25px;
         font-weight: 800;
-        line-height: 1.2;
+        line-height: 1.15;
     }}
 
     .kpi-note {{
-        color: {MUTED};
-        font-size: 11px;
-        margin-top: 8px;
+        color: #A09EAA;
+        font-size: 10px;
+        margin-top: 7px;
     }}
 
     .panel-title {{
-        color: {TEXT};
-        font-size: 17px;
+        color: var(--jr-text);
+        font-size: 15px;
         font-weight: 800;
-        margin: 4px 0 12px 0;
+        margin: 5px 0 10px;
     }}
 
     .filter-panel {{
         background: #FFFFFF;
-        border: 1px solid {BORDER};
-        border-radius: 12px;
-        padding: 16px;
-        margin: 12px 0 20px 0;
+        border: 1px solid var(--jr-border);
+        border-radius: 13px;
+        padding: 14px 17px 8px;
+        margin: 8px 0 18px;
+        box-shadow: 0 4px 14px rgba(54, 39, 86, .025);
     }}
 
     div[data-testid="stPlotlyChart"] {{
         background: #FFFFFF;
-        border: 1px solid {BORDER};
-        border-radius: 12px;
-        padding: 8px;
+        border: 1px solid var(--jr-border);
+        border-radius: 13px;
+        padding: 7px 8px 2px;
+        box-shadow: 0 4px 14px rgba(54, 39, 86, .035);
     }}
 
     div[data-testid="stDataFrame"] {{
         background: #FFFFFF;
-        border: 1px solid {BORDER};
-        border-radius: 10px;
+        border: 1px solid var(--jr-border);
+        border-radius: 12px;
+        overflow: hidden;
     }}
 
     .upload-card {{
         background: white;
-        border: 1px solid {BORDER};
+        border: 1px solid var(--jr-border);
         border-radius: 18px;
         padding: 25px;
-        box-shadow: 0 8px 30px rgba(16, 42, 76, 0.04);
+        box-shadow: 0 8px 30px rgba(54, 39, 86, .06);
     }}
 
     .footer {{
-        color: #94A3B8;
-        font-size: 11px;
+        color: #A7A4B0;
+        font-size: 10px;
         text-align: center;
-        padding: 25px 0 5px 0;
+        padding: 25px 0 5px;
     }}
 
-    button[kind="primary"] {{
-        background-color: {BLUE};
-        border-color: {BLUE};
+    div.stButton > button[kind="primary"] {{
+        background: #62508F;
+        border-color: #62508F;
+        border-radius: 9px;
+        font-weight: 700;
     }}
 
+    div.stButton > button {{
+        border-radius: 9px;
+    }}
+
+    div[data-baseweb="select"] > div,
+    div[data-baseweb="input"] > div {{
+        border-radius: 9px;
+        border-color: #E6E2ED;
+    }}
+
+    @media (max-width: 900px) {{
+        .block-container {{ padding: 1rem 1rem 2rem; }}
+        .page-title {{ font-size: 23px; }}
+        .kpi-value {{ font-size: 21px; }}
+    }}
     </style>
     """,
     unsafe_allow_html=True
@@ -387,24 +455,14 @@ def show_panel_title(title):
     )
 
 
-def show_kpi(label, value, note=""):
+def show_kpi(label, value, note="", accent=PURPLE):
 
     st.markdown(
         f"""
-        <div class="kpi-card">
-
-            <div class="kpi-label">
-                {html.escape(str(label))}
-            </div>
-
-            <div class="kpi-value">
-                {html.escape(str(value))}
-            </div>
-
-            <div class="kpi-note">
-                {html.escape(str(note))}
-            </div>
-
+        <div class="kpi-card" style="--accent:{html.escape(str(accent))};">
+            <div class="kpi-label">{html.escape(str(label))}</div>
+            <div class="kpi-value">{html.escape(str(value))}</div>
+            <div class="kpi-note">{html.escape(str(note))}</div>
         </div>
         """,
         unsafe_allow_html=True
@@ -474,7 +532,6 @@ def get_data():
 
         st.error(f"Unable to load workbook: {error}")
         return None
-
 
 
 # =========================================================
@@ -583,7 +640,6 @@ if not st.session_state["dashboard_entered"]:
 
     st.stop()
 
-
 # =========================================================
 # 8. LOAD DASHBOARD DATA
 # =========================================================
@@ -667,6 +723,29 @@ with st.sidebar:
     st.markdown("---")
 
     st.caption("JR Financial | Analytics")
+
+
+# Compact top utility strip, styled to echo the supplied dashboard reference.
+top_left, top_spacer, top_right = st.columns([5, 2, 1])
+
+with top_left:
+
+    st.markdown(
+        '<div style="background:#FFFFFF;border:1px solid #ECEAF1;'
+        'border-radius:12px;padding:12px 17px;color:#62508F;'
+        'font-size:12px;font-weight:700;margin:0 0 16px;">'
+        'Welcome to JR Financial <span style="color:#A09EAA;'
+        'font-weight:400;">· Loan Portfolio Analytics</span></div>',
+        unsafe_allow_html=True
+    )
+
+with top_right:
+
+    st.markdown(
+        '<div style="text-align:right;padding:12px 4px;color:#92909D;'
+        'font-size:11px;">LIVE WORKBOOK</div>',
+        unsafe_allow_html=True
+    )
 
 
 # =========================================================
@@ -818,7 +897,8 @@ def add_kpis(data, columns):
         show_kpi(
             "Total Applications",
             f"{total_records:,}",
-            "Applications in selected data"
+            "Applications in selected data",
+            accent="#E78B8D"
         )
 
     with kpi_cols[1]:
@@ -826,7 +906,8 @@ def add_kpis(data, columns):
         show_kpi(
             "Total Loan Amount",
             money_inr(total_amount),
-            "Total portfolio value"
+            "Total portfolio value",
+            accent="#62508F"
         )
 
     with kpi_cols[2]:
@@ -834,7 +915,8 @@ def add_kpis(data, columns):
         show_kpi(
             "Disbursed Applications",
             f"{disbursed_count:,}",
-            "Successfully disbursed"
+            "Successfully disbursed",
+            accent="#F2B900"
         )
 
     with kpi_cols[3]:
@@ -842,7 +924,8 @@ def add_kpis(data, columns):
         show_kpi(
             "Pending Applications",
             f"{pending_count:,}",
-            "Awaiting decision"
+            "Awaiting decision",
+            accent="#35AE69"
         )
 
 
@@ -1066,7 +1149,6 @@ def ranking_chart(data, group_column, amount_column, title):
         ),
         use_container_width=True
     )
-
 
 # =========================================================
 # 13. SUMMARY PAGE
