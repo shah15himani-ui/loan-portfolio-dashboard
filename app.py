@@ -17,7 +17,7 @@ st.set_page_config(
 )
 
 # =========================================================
-# 2. DESIGN SYSTEM
+# 2. DESIGN / CSS
 # =========================================================
 
 st.markdown("""
@@ -36,8 +36,6 @@ st.markdown("""
 }
 
 header[data-testid="stHeader"] {
-    height: 0;
-    min-height: 0;
     background: #F2F5FA;
 }
 
@@ -103,7 +101,7 @@ footer {
     margin-bottom: 16px;
 }
 
-/* FILTER AREA */
+/* FILTERS */
 
 .filter-label {
     color: #8290A5;
@@ -134,7 +132,7 @@ div[data-testid="stDateInput"] input {
     border-radius: 7px;
 }
 
-/* DASHBOARD CARDS */
+/* CARDS */
 
 div[data-testid="stVerticalBlockBorderWrapper"] {
     background: #FFFFFF !important;
@@ -148,17 +146,12 @@ div[data-testid="stVerticalBlockBorderWrapper"] > div {
     background: #FFFFFF !important;
 }
 
-/* PLOTLY CHART CONTAINERS */
+/* CHARTS */
 
-div[data-testid="stPlotlyChart"] {
-    background: #FFFFFF !important;
-    border-radius: 10px !important;
-    padding: 0 !important;
-    width: 100%;
-}
-
+div[data-testid="stPlotlyChart"],
 div[data-testid="stPlotlyChart"] > div {
     background: #FFFFFF !important;
+    border-radius: 10px !important;
 }
 
 /* CARD HEADINGS */
@@ -207,7 +200,7 @@ div[data-testid="stPlotlyChart"] > div {
     margin-top: 3px;
 }
 
-/* STATUS LIST */
+/* STATUS ROWS */
 
 .status-row {
     display: flex;
@@ -245,7 +238,7 @@ div[data-testid="stPlotlyChart"] > div {
     white-space: nowrap;
 }
 
-/* PRIORITY ACTIONS */
+/* ACTION ROWS */
 
 .action-row {
     display: flex;
@@ -310,10 +303,6 @@ div[data-testid="stPlotlyChart"] > div {
     text-align: center;
     font-size: 10px;
     padding: 15px 0 5px;
-}
-
-hr {
-    border-color: #E5EAF1;
 }
 </style>
 """, unsafe_allow_html=True)
@@ -443,26 +432,22 @@ def format_money(value):
 
 def show_kpi(label, value, note):
 
-    st.markdown(f"""
+    st.html(f"""
     <div class="kpi-card">
         <div class="kpi-label">{safe(label)}</div>
         <div class="kpi-value">{safe(value)}</div>
         <div class="kpi-note">{safe(note)}</div>
     </div>
-    """, unsafe_allow_html=True)
+    """)
 
 
 def card_heading(title, subtitle=""):
 
-    st.markdown(f"""
+    st.html(f"""
     <div class="card-heading">{safe(title)}</div>
     <div class="card-subheading">{safe(subtitle)}</div>
-    """, unsafe_allow_html=True)
+    """)
 
-
-# =========================================================
-# 6. CHART THEME
-# =========================================================
 
 def chart_theme(fig, height=260):
 
@@ -470,22 +455,18 @@ def chart_theme(fig, height=260):
         height=height,
         autosize=True,
         margin=dict(l=15, r=15, t=25, b=25),
-
         paper_bgcolor="#FFFFFF",
         plot_bgcolor="#FFFFFF",
-
         font=dict(
             family="Inter, Arial",
             size=10,
             color="#75849A"
         ),
-
         hoverlabel=dict(
             bgcolor="#173253",
             font_color="#FFFFFF",
             bordercolor="#173253"
         ),
-
         legend=dict(
             font=dict(size=9, color="#65758C"),
             bgcolor="#FFFFFF",
@@ -528,16 +509,21 @@ def show_chart(fig, height=260, key=None):
 
 
 # =========================================================
-# 7. UPLOAD PAGE
+# 6. UPLOAD PAGE
 # =========================================================
 
 if "loan_df" not in st.session_state:
 
-    st.markdown("""
+    # IMPORTANT:
+    # Use st.html() here, not st.markdown().
+    # This ensures the HTML is rendered as a webpage design.
+
+    st.html("""
     <div style="
         max-width:680px;
-        margin:75px auto 25px;
+        margin:65px auto 25px;
         text-align:center;
+        font-family:Inter,Arial,sans-serif;
     ">
         <div style="
             color:#4778E8;
@@ -551,38 +537,67 @@ if "loan_df" not in st.session_state:
         <h1 style="
             color:#172B4D;
             font-size:36px;
+            font-weight:800;
             margin:12px 0;
         ">
             Loan Portfolio Analytics
         </h1>
 
-        <p style="color:#71829C;font-size:14px;">
+        <p style="
+            color:#71829C;
+            font-size:14px;
+            margin-top:8px;
+        ">
             Enterprise Banking Intelligence Platform
         </p>
+
+        <p style="
+            color:#71829C;
+            font-size:13px;
+            margin-top:18px;
+        ">
+            Upload your loan records to explore portfolio
+            performance, application status and trends.
+        </p>
     </div>
-    """, unsafe_allow_html=True)
+    """)
 
     with st.container(border=True):
 
-        st.subheader("Upload Loan Portfolio")
-
-        st.write(
-            "Upload your Excel workbook to access the interactive dashboard."
-        )
+        st.html("""
+        <div style="padding:5px 0 8px;">
+            <div style="
+                color:#172B4D;
+                font-size:17px;
+                font-weight:750;
+            ">
+                Upload Loan Portfolio
+            </div>
+            <div style="
+                color:#8291A6;
+                font-size:11px;
+                margin-top:5px;
+            ">
+                Select your Excel workbook to open the dashboard.
+            </div>
+        </div>
+        """)
 
         uploaded_file = st.file_uploader(
             "Choose Excel file",
-            type=["xlsx"]
+            type=["xlsx"],
+            key="landing_upload"
         )
 
-        if uploaded_file:
+        if uploaded_file is not None:
 
             try:
+
                 raw_data = pd.read_excel(uploaded_file)
                 cleaned = clean_loan_data(raw_data)
 
                 if cleaned.empty:
-                    st.error("No valid records found.")
+                    st.error("No valid records found in this workbook.")
 
                 else:
                     st.session_state["loan_df"] = cleaned
@@ -596,7 +611,7 @@ if "loan_df" not in st.session_state:
 
 
 # =========================================================
-# 8. LOAD DATA
+# 7. LOAD DATA
 # =========================================================
 
 df = st.session_state["loan_df"].copy()
@@ -606,23 +621,28 @@ df["Month Year"] = df["Month"].astype(str)
 
 
 # =========================================================
-# 9. SIDEBAR NAVIGATION
+# 8. SIDEBAR NAVIGATION
 # =========================================================
 
-st.sidebar.markdown("""
+st.sidebar.html("""
 <div class="brand-box">
     <div class="brand-kicker">JR FINANCIAL</div>
     <div class="brand-title">Portfolio BI</div>
     <div class="brand-subtitle">LOAN PORTFOLIO MANAGEMENT</div>
 </div>
-""", unsafe_allow_html=True)
+""")
 
-st.sidebar.markdown(
-    "<div style='font-size:10px;color:#8795A9;"
-    "font-weight:800;letter-spacing:1.5px;"
-    "margin-bottom:8px;'>MAIN MENU</div>",
-    unsafe_allow_html=True
-)
+st.sidebar.html("""
+<div style="
+    font-size:10px;
+    color:#8795A9;
+    font-weight:800;
+    letter-spacing:1.5px;
+    margin-bottom:8px;
+">
+    MAIN MENU
+</div>
+""")
 
 page = st.sidebar.radio(
     "Navigation",
@@ -632,11 +652,16 @@ page = st.sidebar.radio(
 
 st.sidebar.divider()
 
-st.sidebar.markdown(
-    "<div style='font-size:10px;color:#8795A9;"
-    "font-weight:800;letter-spacing:1px;'>DATA SOURCE</div>",
-    unsafe_allow_html=True
-)
+st.sidebar.html("""
+<div style="
+    font-size:10px;
+    color:#8795A9;
+    font-weight:800;
+    letter-spacing:1px;
+">
+    DATA SOURCE
+</div>
+""")
 
 st.sidebar.caption(
     st.session_state.get("loan_filename", "Excel workbook")
@@ -646,14 +671,14 @@ st.sidebar.caption(f"{len(df):,} records loaded")
 
 if st.sidebar.button("Upload Another File", use_container_width=True):
 
-    for key in ["loan_df", "loan_filename"]:
+    for key in ["loan_df", "loan_filename", "landing_upload"]:
         st.session_state.pop(key, None)
 
     st.rerun()
 
 
 # =========================================================
-# 10. PAGE-WISE FILTERS
+# 9. PAGE-WISE FILTER CONFIGURATION
 # =========================================================
 
 PAGE_FILTERS = {
@@ -710,10 +735,11 @@ def display_filters(data, selected_page):
 
     result = data.copy()
 
-    st.markdown(
-        '<div class="filter-label">FILTERS FOR THIS PAGE</div>',
-        unsafe_allow_html=True
-    )
+    st.html("""
+    <div class="filter-label">
+        FILTERS FOR THIS PAGE
+    </div>
+    """)
 
     columns = st.columns(
         [1] * len(filters) + [0.65],
@@ -786,6 +812,7 @@ def display_filters(data, selected_page):
                 )
 
                 if search.strip():
+
                     result = result[
                         result["Customer Name"].str.contains(
                             search.strip(),
@@ -796,10 +823,7 @@ def display_filters(data, selected_page):
 
     with columns[-1]:
 
-        st.markdown(
-            "<div style='height:25px'></div>",
-            unsafe_allow_html=True
-        )
+        st.markdown("<div style='height:25px'></div>", unsafe_allow_html=True)
 
         st.button(
             "Reset",
@@ -813,7 +837,7 @@ def display_filters(data, selected_page):
 
 
 # =========================================================
-# 11. PAGE HEADER
+# 10. PAGE HEADER
 # =========================================================
 
 PAGE_TITLES = {
@@ -834,19 +858,14 @@ PAGE_SUBTITLES = {
     "KPI Metrics": "Financial and operational performance indicators"
 }
 
-st.markdown(
-    f'<div class="page-title">{safe(PAGE_TITLES[page])}</div>',
-    unsafe_allow_html=True
-)
-
-st.markdown(
-    f'<div class="page-subtitle">{safe(PAGE_SUBTITLES[page])}</div>',
-    unsafe_allow_html=True
-)
+st.html(f"""
+<div class="page-title">{safe(PAGE_TITLES[page])}</div>
+<div class="page-subtitle">{safe(PAGE_SUBTITLES[page])}</div>
+""")
 
 
 # =========================================================
-# 12. APPLY FILTERS
+# 11. APPLY FILTERS
 # =========================================================
 
 filtered = display_filters(df, page)
@@ -857,7 +876,7 @@ if filtered.empty:
 
 
 # =========================================================
-# 13. COMMON METRICS
+# 12. COMMON METRICS
 # =========================================================
 
 total_apps = len(filtered)
@@ -891,14 +910,14 @@ average_loan = filtered["Loan Amount"].mean()
 
 
 # =========================================================
-# 14. SUMMARY PAGE
+# 13. SUMMARY PAGE
 # =========================================================
 
 if page == "Summary":
 
     left, right = st.columns([1.5, 1], gap="small")
 
-    # MONTHLY FUNDING CHART
+    # MONTHLY FUNDING
 
     with left:
 
@@ -967,36 +986,13 @@ if page == "Summary":
                 )
 
                 fig.update_layout(
-                    height=260,
-                    margin=dict(l=15, r=15, t=35, b=35),
-                    paper_bgcolor="#FFFFFF",
-                    plot_bgcolor="#FFFFFF",
                     showlegend=False,
-                    xaxis=dict(
-                        title=None,
-                        showgrid=False,
-                        showline=True,
-                        linecolor="#E5EAF1",
-                        tickfont=dict(
-                            size=10,
-                            color="#8291A6"
-                        ),
-                        tickangle=0
-                    ),
+                    xaxis_title=None,
+                    yaxis_title="₹ Crores",
                     yaxis=dict(
-                        title="₹ Crores",
                         showgrid=True,
                         gridcolor="#EDF1F6",
-                        zeroline=False,
-                        tickfont=dict(
-                            size=9,
-                            color="#8291A6"
-                        )
-                    ),
-                    font=dict(
-                        family="Inter, Arial",
-                        color="#75849A",
-                        size=10
+                        zeroline=False
                     )
                 )
 
@@ -1007,10 +1003,7 @@ if page == "Summary":
                 )
 
             else:
-                st.info(
-                    "No valid monthly funding data is available "
-                    "for the selected filters."
-                )
+                st.info("No monthly funding data is available.")
 
             st.caption(
                 "₹ Cr · Aggregated from loan application dates"
@@ -1027,15 +1020,13 @@ if page == "Summary":
                 "Application count and requested loan amount"
             )
 
-            status_order = [
+            for status in [
                 "Approved",
                 "Disbursed",
                 "Pending",
                 "Under Review",
                 "Rejected"
-            ]
-
-            for status in status_order:
+            ]:
 
                 subset = filtered[
                     filtered["Status"].str.lower() == status.lower()
@@ -1046,7 +1037,7 @@ if page == "Summary":
 
                 bg, fg = STATUS_STYLES[status]
 
-                st.markdown(f"""
+                st.html(f"""
                 <div class="status-row">
                     <div class="status-left">
                         <span class="status-pill"
@@ -1061,18 +1052,20 @@ if page == "Summary":
                         {format_crore(amount)}
                     </div>
                 </div>
-                """, unsafe_allow_html=True)
+                """)
 
-            st.markdown(
-                "<p style='font-size:10px;color:#8291A6;"
-                "margin-top:12px;'>"
-                "Stage totals use requested proposal amounts. "
-                "Disbursed amounts are tracked separately."
-                "</p>",
-                unsafe_allow_html=True
-            )
+            st.html("""
+            <p style="
+                font-size:10px;
+                color:#8291A6;
+                margin-top:12px;
+            ">
+                Stage totals use requested proposal amounts.
+                Disbursed amounts are tracked separately.
+            </p>
+            """)
 
-    # PRIORITY ACTIONS AND TEAM CASES
+    # PRIORITY ACTIONS AND BUSINESS TEAM CASES
 
     left, right = st.columns([1.5, 1], gap="small")
 
@@ -1098,7 +1091,7 @@ if page == "Summary":
 
             if action_data.empty:
 
-                st.markdown("""
+                st.html("""
                 <div style="
                     text-align:center;
                     color:#8291A6;
@@ -1107,7 +1100,7 @@ if page == "Summary":
                 ">
                     No open actions.
                 </div>
-                """, unsafe_allow_html=True)
+                """)
 
             else:
 
@@ -1120,7 +1113,7 @@ if page == "Summary":
                         ("#EEF2F7", "#536780")
                     )
 
-                    st.markdown(f"""
+                    st.html(f"""
                     <div class="action-row">
                         <div>
                             <div class="action-name">
@@ -1137,7 +1130,7 @@ if page == "Summary":
                             {safe(status)}
                         </span>
                     </div>
-                    """, unsafe_allow_html=True)
+                    """)
 
     with right:
 
@@ -1186,20 +1179,14 @@ if page == "Summary":
                             text=f"<b>{total_cases}</b>",
                             x=0.5,
                             y=0.53,
-                            font=dict(
-                                size=28,
-                                color="#172B4D"
-                            ),
+                            font=dict(size=28, color="#172B4D"),
                             showarrow=False
                         ),
                         dict(
                             text="Total cases",
                             x=0.5,
                             y=0.40,
-                            font=dict(
-                                size=10,
-                                color="#8291A6"
-                            ),
+                            font=dict(size=10, color="#8291A6"),
                             showarrow=False
                         )
                     ],
@@ -1224,7 +1211,7 @@ if page == "Summary":
 
 
 # =========================================================
-# 15. LOAN TYPES PAGE
+# 14. LOAN TYPES PAGE
 # =========================================================
 
 elif page == "Loan Types":
@@ -1270,10 +1257,7 @@ elif page == "Loan Types":
             )
 
             fig.update_traces(
-                hovertemplate=(
-                    "%{y}<br>Amount: ₹%{x:,.0f}"
-                    "<extra></extra>"
-                )
+                hovertemplate="%{y}<br>Amount: ₹%{x:,.0f}<extra></extra>"
             )
 
             show_chart(fig, 320, "loan_type_amount")
@@ -1302,15 +1286,11 @@ elif page == "Loan Types":
     display["Loan_Amount"] = display["Loan_Amount"].apply(format_money)
     display["Average_Loan"] = display["Average_Loan"].apply(format_money)
 
-    st.dataframe(
-        display,
-        use_container_width=True,
-        hide_index=True
-    )
+    st.dataframe(display, use_container_width=True, hide_index=True)
 
 
 # =========================================================
-# 16. BANKS PAGE
+# 15. BANKS PAGE
 # =========================================================
 
 elif page == "Banks":
@@ -1379,15 +1359,11 @@ elif page == "Banks":
     display["Loan_Amount"] = display["Loan_Amount"].apply(format_money)
     display["Average_Loan"] = display["Average_Loan"].apply(format_money)
 
-    st.dataframe(
-        display,
-        use_container_width=True,
-        hide_index=True
-    )
+    st.dataframe(display, use_container_width=True, hide_index=True)
 
 
 # =========================================================
-# 17. EXECUTIVES PAGE
+# 16. EXECUTIVES PAGE
 # =========================================================
 
 elif page == "Executives":
@@ -1483,15 +1459,11 @@ elif page == "Executives":
     display["Loan_Amount"] = display["Loan_Amount"].apply(format_money)
     display["Average_Loan"] = display["Average_Loan"].apply(format_money)
 
-    st.dataframe(
-        display,
-        use_container_width=True,
-        hide_index=True
-    )
+    st.dataframe(display, use_container_width=True, hide_index=True)
 
 
 # =========================================================
-# 18. RECORDS PAGE
+# 17. RECORDS PAGE
 # =========================================================
 
 elif page == "Records":
@@ -1522,7 +1494,7 @@ elif page == "Records":
 
 
 # =========================================================
-# 19. KPI METRICS PAGE
+# 18. KPI METRICS PAGE
 # =========================================================
 
 elif page == "KPI Metrics":
@@ -1628,11 +1600,11 @@ elif page == "KPI Metrics":
 
 
 # =========================================================
-# 20. FOOTER
+# 19. FOOTER
 # =========================================================
 
-st.markdown("""
+st.html("""
 <div class="footer">
     JR FINANCIAL · ENTERPRISE LOAN PORTFOLIO ANALYTICS
 </div>
-""", unsafe_allow_html=True)
+""")
