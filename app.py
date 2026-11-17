@@ -476,89 +476,45 @@ def get_data():
         return None
 
 
+
 # =========================================================
 # 7. LANDING PAGE - UPLOAD FILE
 # =========================================================
 
 if not st.session_state["dashboard_entered"]:
 
-    # Centered landing page
     st.markdown(
-        """
-        <div style="
-            max-width:850px;
-            margin:55px auto 15px auto;
-            text-align:center;
-        ">
-
-            <div style="
-                color:#2475F5;
-                font-size:13px;
-                font-weight:800;
-                letter-spacing:3px;
-            ">
-                JR FINANCIAL
-            </div>
-
-            <h1 style="
-                color:#102A4C;
-                font-size:38px;
-                font-weight:800;
-                margin:12px 0;
-            ">
-                Loan Portfolio Analytics
-            </h1>
-
-            <p style="
-                color:#718096;
-                font-size:15px;
-                margin-bottom:30px;
-            ">
-                Turn your loan records into meaningful insights.
-                Upload your Excel workbook to get started.
-            </p>
-
-        </div>
-        """,
+        "<h1 style='text-align:center;color:#102A4C;'>"
+        "JR Financial</h1>",
         unsafe_allow_html=True
     )
+
+    st.markdown(
+        "<h2 style='text-align:center;color:#2475F5;'>"
+        "Loan Portfolio Analytics</h2>",
+        unsafe_allow_html=True
+    )
+
+    st.markdown(
+        "<p style='text-align:center;color:#718096;'>"
+        "Upload your Excel workbook to access your dashboard."
+        "</p>",
+        unsafe_allow_html=True
+    )
+
+    st.write("")
+    st.write("")
 
     _, center, _ = st.columns([1, 2, 1])
 
     with center:
 
-        st.markdown(
-            """
-            <div class="upload-card">
+        st.container(border=True)
 
-                <div style="
-                    font-size:35px;
-                    text-align:center;
-                    margin-bottom:10px;
-                ">
-                    📊
-                </div>
+        st.subheader("Upload your Excel file")
 
-                <h3 style="
-                    color:#102A4C;
-                    text-align:center;
-                    margin-bottom:5px;
-                ">
-                    Upload your Excel file
-                </h3>
-
-                <p style="
-                    color:#718096;
-                    font-size:13px;
-                    text-align:center;
-                ">
-                    Select your loan portfolio workbook
-                    to access your dashboard.
-                </p>
-
-            </div>
-            """,
-            unsafe_allow_html=True
+        st.caption(
+            "Supported formats: XLSX and XLS"
         )
 
         uploaded_file = st.file_uploader(
@@ -597,7 +553,7 @@ if not st.session_state["dashboard_entered"]:
                     f"{len(preview.columns):,} columns"
                 )
 
-                show_panel_title("Data Preview")
+                st.markdown("### Data Preview")
 
                 st.dataframe(
                     preview.head(5),
@@ -624,15 +580,6 @@ if not st.session_state["dashboard_entered"]:
                 st.error(
                     f"Unable to read this Excel file: {error}"
                 )
-
-        st.markdown(
-            """
-            <div class="footer">
-                JR Financial · Loan Portfolio Analytics
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
 
     st.stop()
 
