@@ -10,7 +10,7 @@ import html
 # =========================================================
 
 st.set_page_config(
-    page_title="JR Financial | Loan Portfolio Analytics",
+    page_title="Loan Portfolio Analytics",
     page_icon="📊",
     layout="wide",
     initial_sidebar_state="expanded"
@@ -585,7 +585,6 @@ df["Month Year"] = df["Month"].astype(str)
 
 st.sidebar.markdown("""
 <div class="brand-box">
-    <div class="brand-kicker">JR FINANCIAL</div>
     <div class="brand-title">Portfolio BI</div>
     <div class="brand-subtitle">LOAN PORTFOLIO MANAGEMENT</div>
 </div>
