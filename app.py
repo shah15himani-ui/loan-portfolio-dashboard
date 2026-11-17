@@ -134,7 +134,7 @@ div[data-testid="stDateInput"] input {
     border-radius: 7px;
 }
 
-/* WHITE DASHBOARD CARDS */
+/* DASHBOARD CARDS */
 
 div[data-testid="stVerticalBlockBorderWrapper"] {
     background: #FFFFFF !important;
@@ -148,33 +148,17 @@ div[data-testid="stVerticalBlockBorderWrapper"] > div {
     background: #FFFFFF !important;
 }
 
-/* FORCE ENTIRE PLOTLY AREA TO WHITE */
+/* PLOTLY CHART CONTAINERS */
 
 div[data-testid="stPlotlyChart"] {
     background: #FFFFFF !important;
     border-radius: 10px !important;
     padding: 0 !important;
+    width: 100%;
 }
 
 div[data-testid="stPlotlyChart"] > div {
     background: #FFFFFF !important;
-}
-
-div[data-testid="stPlotlyChart"] iframe {
-    background: #FFFFFF !important;
-}
-
-.js-plotly-plot,
-.plot-container,
-.svg-container,
-.main-svg {
-    background: #FFFFFF !important;
-}
-
-div[data-testid="stPlotlyChart"] .plotly,
-div[data-testid="stPlotlyChart"] .plot-container,
-div[data-testid="stPlotlyChart"] .svg-container {
-    background-color: #FFFFFF !important;
 }
 
 /* CARD HEADINGS */
@@ -477,16 +461,16 @@ def card_heading(title, subtitle=""):
 
 
 # =========================================================
-# 6. CHART THEME - PURE WHITE EVERYWHERE
+# 6. CHART THEME
 # =========================================================
 
-def chart_theme(fig, height=240):
+def chart_theme(fig, height=260):
 
     fig.update_layout(
         height=height,
-        margin=dict(l=15, r=15, t=20, b=15),
+        autosize=True,
+        margin=dict(l=15, r=15, t=25, b=25),
 
-        # Entire chart canvas
         paper_bgcolor="#FFFFFF",
         plot_bgcolor="#FFFFFF",
 
@@ -506,15 +490,6 @@ def chart_theme(fig, height=240):
             font=dict(size=9, color="#65758C"),
             bgcolor="#FFFFFF",
             borderwidth=0
-        ),
-
-        autosize=True,
-
-        # White background for all chart components
-        modebar=dict(
-            bgcolor="#FFFFFF",
-            color="#8291A6",
-            activecolor="#4778E8"
         )
     )
 
@@ -523,8 +498,7 @@ def chart_theme(fig, height=240):
         zeroline=False,
         linecolor="#E5EAF1",
         tickfont=dict(size=9, color="#8291A6"),
-        automargin=True,
-        title_font=dict(color="#8291A6")
+        automargin=True
     )
 
     fig.update_yaxes(
@@ -532,14 +506,13 @@ def chart_theme(fig, height=240):
         zeroline=False,
         linecolor="#E5EAF1",
         tickfont=dict(size=9, color="#8291A6"),
-        automargin=True,
-        title_font=dict(color="#8291A6")
+        automargin=True
     )
 
     return fig
 
 
-def show_chart(fig, height=240):
+def show_chart(fig, height=260, key=None):
 
     fig = chart_theme(fig, height)
 
@@ -549,7 +522,8 @@ def show_chart(fig, height=240):
         config={
             "displayModeBar": False,
             "responsive": True
-        }
+        },
+        key=key
     )
 
 
@@ -679,7 +653,7 @@ if st.sidebar.button("Upload Another File", use_container_width=True):
 
 
 # =========================================================
-# 10. PAGE-WISE FILTER SETTINGS
+# 10. PAGE-WISE FILTERS
 # =========================================================
 
 PAGE_FILTERS = {
@@ -784,7 +758,6 @@ def display_filters(data, selected_page):
             elif filter_name in FILTER_COLUMNS:
 
                 column_name = FILTER_COLUMNS[filter_name]
-
                 key_name = filter_name.lower().replace(" ", "_")
 
                 options = sorted(
@@ -873,7 +846,7 @@ st.markdown(
 
 
 # =========================================================
-# 12. APPLY PAGE FILTERS
+# 12. APPLY FILTERS
 # =========================================================
 
 filtered = display_filters(df, page)
@@ -925,7 +898,7 @@ if page == "Summary":
 
     left, right = st.columns([1.5, 1], gap="small")
 
-    # MONTHLY FUNDING
+    # MONTHLY FUNDING CHART
 
     with left:
 
@@ -936,59 +909,114 @@ if page == "Summary":
                 "Loan portfolio value by month · Selected period"
             )
 
+            monthly_data = filtered.copy()
+
+            monthly_data["Date"] = pd.to_datetime(
+                monthly_data["Date"],
+                errors="coerce"
+            )
+
+            monthly_data["Loan Amount"] = pd.to_numeric(
+                monthly_data["Loan Amount"],
+                errors="coerce"
+            )
+
+            monthly_data = monthly_data.dropna(
+                subset=["Date", "Loan Amount"]
+            )
+
             monthly = (
-                filtered.groupby("Month")["Loan Amount"]
-                .sum()
-                .reset_index()
+                monthly_data
+                .assign(
+                    Month=monthly_data["Date"].dt.to_period("M")
+                )
+                .groupby("Month", as_index=False)
+                .agg(
+                    Total_Funding=("Loan Amount", "sum")
+                )
                 .sort_values("Month")
             )
 
-            monthly["Month Label"] = (
-                monthly["Month"].dt.strftime("%b %Y")
-            )
+            if not monthly.empty:
 
-            fig = go.Figure()
+                monthly["Month Label"] = (
+                    monthly["Month"].dt.strftime("%b %Y")
+                )
 
-            fig.add_trace(
-                go.Bar(
-                    x=monthly["Month Label"],
-                    y=monthly["Loan Amount"] / 10000000,
-                    marker=dict(
-                        color="#4778E8",
-                        line=dict(width=0)
-                    ),
-                    text=[
-                        f"{v:.2f}"
-                        for v in monthly["Loan Amount"] / 10000000
-                    ],
+                monthly["Funding Cr"] = (
+                    monthly["Total_Funding"] / 10000000
+                )
+
+                fig = px.bar(
+                    monthly,
+                    x="Month Label",
+                    y="Funding Cr",
+                    text="Funding Cr",
+                    color_discrete_sequence=["#4778E8"]
+                )
+
+                fig.update_traces(
+                    texttemplate="%{text:.2f}",
                     textposition="outside",
-                    textfont=dict(
-                        size=9,
-                        color="#173253"
-                    ),
                     hovertemplate=(
-                        "%{x}<br>"
+                        "<b>%{x}</b><br>"
                         "Funding: ₹%{y:.2f} Cr"
                         "<extra></extra>"
+                    ),
+                    cliponaxis=False
+                )
+
+                fig.update_layout(
+                    height=260,
+                    margin=dict(l=15, r=15, t=35, b=35),
+                    paper_bgcolor="#FFFFFF",
+                    plot_bgcolor="#FFFFFF",
+                    showlegend=False,
+                    xaxis=dict(
+                        title=None,
+                        showgrid=False,
+                        showline=True,
+                        linecolor="#E5EAF1",
+                        tickfont=dict(
+                            size=10,
+                            color="#8291A6"
+                        ),
+                        tickangle=0
+                    ),
+                    yaxis=dict(
+                        title="₹ Crores",
+                        showgrid=True,
+                        gridcolor="#EDF1F6",
+                        zeroline=False,
+                        tickfont=dict(
+                            size=9,
+                            color="#8291A6"
+                        )
+                    ),
+                    font=dict(
+                        family="Inter, Arial",
+                        color="#75849A",
+                        size=10
                     )
                 )
-            )
 
-            fig.update_layout(
-                showlegend=False,
-                bargap=0.38,
-                yaxis_title="₹ Cr",
-                xaxis_title="",
-                yaxis=dict(showticklabels=False)
-            )
+                show_chart(
+                    fig,
+                    height=260,
+                    key="monthly_funding_chart"
+                )
 
-            show_chart(fig, 225)
+            else:
+                st.info(
+                    "No valid monthly funding data is available "
+                    "for the selected filters."
+                )
 
             st.caption(
                 "₹ Cr · Aggregated from loan application dates"
             )
 
-    # STAGE DISTRIBUTION
+    # CURRENT STAGE DISTRIBUTION
 
     with right:
 
@@ -1044,7 +1072,7 @@ if page == "Summary":
                 unsafe_allow_html=True
             )
 
-    # PRIORITY ACTIONS AND EXECUTIVE DONUT
+    # PRIORITY ACTIONS AND TEAM CASES
 
     left, right = st.columns([1.5, 1], gap="small")
 
@@ -1183,10 +1211,16 @@ if page == "Summary":
                         xanchor="left",
                         font=dict(size=9),
                         bgcolor="#FFFFFF"
-                    )
+                    ),
+                    paper_bgcolor="#FFFFFF",
+                    plot_bgcolor="#FFFFFF"
                 )
 
-                show_chart(fig, 230)
+                show_chart(
+                    fig,
+                    height=230,
+                    key="business_team_chart"
+                )
 
 
 # =========================================================
@@ -1236,10 +1270,13 @@ elif page == "Loan Types":
             )
 
             fig.update_traces(
-                hovertemplate="%{y}<br>Amount: ₹%{x:,.0f}<extra></extra>"
+                hovertemplate=(
+                    "%{y}<br>Amount: ₹%{x:,.0f}"
+                    "<extra></extra>"
+                )
             )
 
-            show_chart(fig, 320)
+            show_chart(fig, 320, "loan_type_amount")
 
     with right:
 
@@ -1257,7 +1294,7 @@ elif page == "Loan Types":
 
             fig.update_traces(textinfo="percent")
 
-            show_chart(fig, 320)
+            show_chart(fig, 320, "loan_type_distribution")
 
     st.markdown("#### Loan Category Details")
 
@@ -1265,7 +1302,11 @@ elif page == "Loan Types":
     display["Loan_Amount"] = display["Loan_Amount"].apply(format_money)
     display["Average_Loan"] = display["Average_Loan"].apply(format_money)
 
-    st.dataframe(display, use_container_width=True, hide_index=True)
+    st.dataframe(
+        display,
+        use_container_width=True,
+        hide_index=True
+    )
 
 
 # =========================================================
@@ -1314,7 +1355,7 @@ elif page == "Banks":
                 color_discrete_sequence=["#4778E8"]
             )
 
-            show_chart(fig, 340)
+            show_chart(fig, 340, "bank_funding")
 
     with right:
 
@@ -1330,7 +1371,7 @@ elif page == "Banks":
                 color_discrete_sequence=COLORS
             )
 
-            show_chart(fig, 340)
+            show_chart(fig, 340, "bank_applications")
 
     st.markdown("#### Bank Performance Details")
 
@@ -1338,7 +1379,11 @@ elif page == "Banks":
     display["Loan_Amount"] = display["Loan_Amount"].apply(format_money)
     display["Average_Loan"] = display["Average_Loan"].apply(format_money)
 
-    st.dataframe(display, use_container_width=True, hide_index=True)
+    st.dataframe(
+        display,
+        use_container_width=True,
+        hide_index=True
+    )
 
 
 # =========================================================
@@ -1387,7 +1432,7 @@ elif page == "Executives":
                 color_discrete_sequence=["#28A879"]
             )
 
-            show_chart(fig, 340)
+            show_chart(fig, 340, "executive_funding")
 
     with right:
 
@@ -1425,10 +1470,12 @@ elif page == "Executives":
                         font=dict(size=10, color="#8291A6"),
                         showarrow=False
                     )
-                ]
+                ],
+                paper_bgcolor="#FFFFFF",
+                plot_bgcolor="#FFFFFF"
             )
 
-            show_chart(fig, 340)
+            show_chart(fig, 340, "executive_distribution")
 
     st.markdown("#### Executive Performance Details")
 
@@ -1436,7 +1483,11 @@ elif page == "Executives":
     display["Loan_Amount"] = display["Loan_Amount"].apply(format_money)
     display["Average_Loan"] = display["Average_Loan"].apply(format_money)
 
-    st.dataframe(display, use_container_width=True, hide_index=True)
+    st.dataframe(
+        display,
+        use_container_width=True,
+        hide_index=True
+    )
 
 
 # =========================================================
@@ -1532,7 +1583,7 @@ elif page == "KPI Metrics":
 
             fig.update_layout(showlegend=False)
 
-            show_chart(fig, 300)
+            show_chart(fig, 300, "kpi_status_chart")
 
     with right:
 
@@ -1559,7 +1610,7 @@ elif page == "KPI Metrics":
                 color_discrete_sequence=["#28C979", "#4778E8"]
             )
 
-            show_chart(fig, 300)
+            show_chart(fig, 300, "kpi_financial_chart")
 
     a, b, c = st.columns(3)
 
@@ -1570,7 +1621,10 @@ elif page == "KPI Metrics":
         st.metric("Disbursed Amount", format_crore(disbursed_amount))
 
     with c:
-        st.metric("Unique Customers", f"{filtered['Customer Name'].nunique():,}")
+        st.metric(
+            "Unique Customers",
+            f"{filtered['Customer Name'].nunique():,}"
+        )
 
 
 # =========================================================
