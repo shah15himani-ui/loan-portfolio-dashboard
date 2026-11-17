@@ -2,6 +2,7 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
+import plotly.graph_objects as go
 from io import BytesIO
 import html
 
@@ -533,7 +534,6 @@ def get_data():
         return None
 
 
-
 # =========================================================
 # 7. LANDING PAGE - UPLOAD FILE
 # =========================================================
@@ -731,17 +731,26 @@ with st.sidebar:
 # =========================================================
 
 def apply_page_filters(original_df, page_name, filter_fields, columns):
-    """Apply page filters. The Summary page intentionally has only Date Range."""
+    """Apply page filters. Summary has only the Date Range filter."""
+
     filtered = original_df.copy()
 
-    # Summary page: exactly one filter control, with no extra filter heading.
+    # Summary page: exactly one filter control.
     if page_name == "summary":
+
         date_col_filter = columns.get("date")
+
         if not date_col_filter or date_col_filter not in filtered.columns:
-            st.info("A date column was not detected, so the date range filter is unavailable.")
+            st.info(
+                "A date column was not detected, so the date range filter is unavailable."
+            )
             return filtered
 
-        valid_dates = pd.to_datetime(filtered[date_col_filter], errors="coerce").dropna()
+        valid_dates = pd.to_datetime(
+            filtered[date_col_filter],
+            errors="coerce"
+        ).dropna()
+
         if valid_dates.empty:
             st.info("No valid dates are available for filtering.")
             return filtered
@@ -759,55 +768,106 @@ def apply_page_filters(original_df, page_name, filter_fields, columns):
         )
 
         if isinstance(selected_range, (tuple, list)) and len(selected_range) == 2:
+
             start_date, end_date = selected_range
-            date_values = pd.to_datetime(filtered[date_col_filter], errors="coerce").dt.date
-            filtered = filtered[date_values.between(start_date, end_date)]
+
+            date_values = pd.to_datetime(
+                filtered[date_col_filter],
+                errors="coerce"
+            ).dt.date
+
+            filtered = filtered[
+                date_values.between(start_date, end_date)
+            ]
+
         elif isinstance(selected_range, (tuple, list)) and len(selected_range) == 1:
+
             chosen_date = selected_range[0]
-            date_values = pd.to_datetime(filtered[date_col_filter], errors="coerce").dt.date
-            filtered = filtered[date_values == chosen_date]
+
+            date_values = pd.to_datetime(
+                filtered[date_col_filter],
+                errors="coerce"
+            ).dt.date
+
+            filtered = filtered[
+                date_values == chosen_date
+            ]
 
         return filtered
 
     if not filter_fields:
         return filtered
 
-    st.markdown('<div class="filter-panel">', unsafe_allow_html=True)
+    st.markdown(
+        '<div class="filter-panel">',
+        unsafe_allow_html=True
+    )
+
     show_panel_title("Filter Data")
 
-    non_date_fields = [field for field in filter_fields if field != "date"]
+    non_date_fields = [
+        field for field in filter_fields
+        if field != "date"
+    ]
 
     for start_index in range(0, len(non_date_fields), 3):
-        current_fields = non_date_fields[start_index:start_index + 3]
+
+        current_fields = non_date_fields[
+            start_index:start_index + 3
+        ]
+
         filter_cols = st.columns(3, gap="large")
 
         for index, field_key in enumerate(current_fields):
+
             col_name = columns.get(field_key)
+
             if not col_name or col_name not in filtered.columns:
                 continue
 
             with filter_cols[index]:
+
                 options = sorted(
-                    filtered[col_name].dropna().astype(str).unique().tolist()
+                    filtered[col_name]
+                    .dropna()
+                    .astype(str)
+                    .unique()
+                    .tolist()
                 )
+
                 selected = st.multiselect(
                     field_key.replace("_", " ").title(),
                     options=options,
                     default=options,
                     key=f"{page_name}_{field_key}_dropdown"
                 )
+
                 if selected:
-                    filtered = filtered[filtered[col_name].astype(str).isin(selected)]
+
+                    filtered = filtered[
+                        filtered[col_name].astype(str).isin(selected)
+                    ]
+
                 else:
+
                     filtered = filtered.iloc[0:0]
 
     if "date" in filter_fields:
+
         date_col_filter = columns.get("date")
+
         if date_col_filter and date_col_filter in filtered.columns:
-            valid_dates = pd.to_datetime(filtered[date_col_filter], errors="coerce").dropna()
+
+            valid_dates = pd.to_datetime(
+                filtered[date_col_filter],
+                errors="coerce"
+            ).dropna()
+
             if not valid_dates.empty:
+
                 min_date = valid_dates.min().date()
                 max_date = valid_dates.max().date()
+
                 selected_range = st.date_input(
                     "Date Range",
                     value=(min_date, max_date),
@@ -816,12 +876,25 @@ def apply_page_filters(original_df, page_name, filter_fields, columns):
                     key=f"{page_name}_date_range",
                     format="DD/MM/YYYY"
                 )
-                if isinstance(selected_range, (tuple, list)) and len(selected_range) == 2:
-                    start_date, end_date = selected_range
-                    date_values = pd.to_datetime(filtered[date_col_filter], errors="coerce").dt.date
-                    filtered = filtered[date_values.between(start_date, end_date)]
 
-    st.markdown('</div>', unsafe_allow_html=True)
+                if isinstance(selected_range, (tuple, list)) and len(selected_range) == 2:
+
+                    start_date, end_date = selected_range
+
+                    date_values = pd.to_datetime(
+                        filtered[date_col_filter],
+                        errors="coerce"
+                    ).dt.date
+
+                    filtered = filtered[
+                        date_values.between(start_date, end_date)
+                    ]
+
+    st.markdown(
+        '</div>',
+        unsafe_allow_html=True
+    )
+
     return filtered
 
 
@@ -902,41 +975,201 @@ def add_kpis(data, columns):
 # 12. CHART FUNCTIONS
 # =========================================================
 
-def status_chart(data, status_column):
+def status_chart(data, status_column, amount_column=None):
+    """
+    Concentric two-ring pie chart.
 
-    status_df = (
-        data[status_column]
+    Outer ring: application count by status.
+    Inner ring: loan amount by status.
+    Centre: total application count.
+    """
+
+    chart_data = data.copy()
+
+    chart_data["_chart_status"] = (
+        chart_data[status_column]
         .fillna("Not Available")
         .astype(str)
-        .value_counts()
-        .reset_index()
+        .str.strip()
+        .replace("", "Not Available")
     )
 
-    status_df.columns = [
-        "Status",
-        "Applications"
+    status_order = (
+        chart_data["_chart_status"]
+        .value_counts()
+        .index.tolist()
+    )
+
+    counts = (
+        chart_data["_chart_status"]
+        .value_counts()
+        .reindex(status_order)
+    )
+
+    fallback_palette = [
+        NAVY,
+        BLUE,
+        PURPLE,
+        GREEN,
+        ORANGE,
+        RED
     ]
 
-    fig = px.pie(
-        status_df,
-        names="Status",
-        values="Applications",
-        hole=0.62,
-        color="Status",
-        color_discrete_map=STATUS_COLORS
-    )
+    palette = [
+        STATUS_COLORS.get(
+            status,
+            fallback_palette[i % len(fallback_palette)]
+        )
+        for i, status in enumerate(status_order)
+    ]
 
-    fig.update_traces(
-        textposition="inside",
-        textinfo="percent+label",
-        hovertemplate=(
-            "%{label}<br>"
-            "Applications: %{value}"
-            "<extra></extra>"
+    fig = go.Figure()
+
+    # OUTER RING: APPLICATION COUNT
+
+    fig.add_trace(
+        go.Pie(
+            labels=status_order,
+            values=counts.values,
+            name="Applications",
+            hole=0.68,
+            sort=False,
+            direction="clockwise",
+            marker=dict(
+                colors=palette,
+                line=dict(
+                    color="#FFFFFF",
+                    width=3
+                )
+            ),
+            textposition="inside",
+            texttemplate="%{percent}",
+            insidetextorientation="horizontal",
+            hovertemplate=(
+                "<b>%{label}</b><br>"
+                "Applications: %{value:,}<br>"
+                "Share: %{percent}"
+                "<extra></extra>"
+            ),
+            domain=dict(
+                x=[0.08, 0.92],
+                y=[0.04, 0.96]
+            ),
+            showlegend=True
         )
     )
 
-    return chart_layout(fig, 360)
+    # INNER RING: LOAN AMOUNT
+
+    if amount_column and amount_column in chart_data.columns:
+
+        amount_values = pd.to_numeric(
+            chart_data[amount_column],
+            errors="coerce"
+        ).fillna(0)
+
+        amount_by_status = (
+            chart_data.assign(
+                _chart_amount=amount_values
+            )
+            .groupby(
+                "_chart_status",
+                dropna=False
+            )["_chart_amount"]
+            .sum()
+            .reindex(
+                status_order,
+                fill_value=0
+            )
+        )
+
+        if amount_by_status.sum() > 0:
+
+            fig.add_trace(
+                go.Pie(
+                    labels=status_order,
+                    values=amount_by_status.values,
+                    name="Loan Amount",
+                    hole=0.42,
+                    sort=False,
+                    direction="clockwise",
+                    marker=dict(
+                        colors=palette,
+                        line=dict(
+                            color="#FFFFFF",
+                            width=3
+                        )
+                    ),
+                    textposition="none",
+                    hovertemplate=(
+                        "<b>%{label}</b><br>"
+                        "Loan amount: ₹%{value:,.0f}<br>"
+                        "Share: %{percent}"
+                        "<extra></extra>"
+                    ),
+                    domain=dict(
+                        x=[0.25, 0.75],
+                        y=[0.21, 0.79]
+                    ),
+                    showlegend=False
+                )
+            )
+
+    # CENTRE LABEL
+
+    total_apps = int(counts.sum())
+
+    fig.add_annotation(
+        x=0.5,
+        y=0.5,
+        text=(
+            f"<b>{total_apps:,}</b><br>"
+            "<span style='font-size:11px;color:#92909D'>"
+            "Applications"
+            "</span>"
+        ),
+        showarrow=False,
+        font=dict(
+            size=21,
+            color=TEXT,
+            family="Arial"
+        ),
+        align="center"
+    )
+
+    fig.update_layout(
+        height=360,
+        paper_bgcolor="#FFFFFF",
+        plot_bgcolor="#FFFFFF",
+        font=dict(
+            family="Arial",
+            color=TEXT,
+            size=11
+        ),
+        margin=dict(
+            l=12,
+            r=12,
+            t=12,
+            b=12
+        ),
+        legend=dict(
+            orientation="h",
+            yanchor="bottom",
+            y=-0.08,
+            xanchor="center",
+            x=0.5,
+            font=dict(
+                size=10,
+                color=TEXT
+            )
+        ),
+        hoverlabel=dict(
+            bgcolor="#FFFFFF",
+            font_color=TEXT
+        )
+    )
+
+    return fig
 
 
 def loan_type_chart(data, type_column, amount_column):
@@ -944,10 +1177,16 @@ def loan_type_chart(data, type_column, amount_column):
     if amount_column:
 
         chart_df = (
-            data.groupby(type_column, dropna=False)[amount_column]
+            data.groupby(
+                type_column,
+                dropna=False
+            )[amount_column]
             .sum()
             .reset_index()
-            .sort_values(amount_column, ascending=True)
+            .sort_values(
+                amount_column,
+                ascending=True
+            )
         )
 
         value_col = amount_column
@@ -985,13 +1224,20 @@ def loan_type_chart(data, type_column, amount_column):
 
     fig.update_layout(
         showlegend=False,
-        xaxis_title="Loan Amount" if amount_column else "Applications",
+        xaxis_title=(
+            "Loan Amount"
+            if amount_column
+            else "Applications"
+        ),
         yaxis_title="Loan Type"
     )
 
     return chart_layout(
         fig,
-        max(350, len(chart_df) * 42)
+        max(
+            350,
+            len(chart_df) * 42
+        )
     )
 
 
@@ -1114,7 +1360,10 @@ def ranking_chart(data, group_column, amount_column, title):
     st.plotly_chart(
         chart_layout(
             fig,
-            max(350, len(ranking) * 42)
+            max(
+                350,
+                len(ranking) * 42
+            )
         ),
         use_container_width=True
     )
@@ -1126,9 +1375,14 @@ def ranking_chart(data, group_column, amount_column, title):
 
 if page == "Summary":
 
-    # Summary intentionally has no welcome banner, page title, or description.
-    # Its only filter is Date Range.
-    filter_fields = ["date"] if columns.get("date") else []
+    # No welcome banner, Summary title or description.
+    # Only the Date Range filter is displayed.
+
+    filter_fields = (
+        ["date"]
+        if columns.get("date")
+        else []
+    )
 
     filtered_df = apply_page_filters(
         df,
@@ -1137,7 +1391,10 @@ if page == "Summary":
         columns
     )
 
-    add_kpis(filtered_df, columns)
+    add_kpis(
+        filtered_df,
+        columns
+    )
 
     st.write("")
 
@@ -1153,7 +1410,11 @@ if page == "Summary":
             show_panel_title("Application Status")
 
             st.plotly_chart(
-                status_chart(filtered_df, status_col),
+                status_chart(
+                    filtered_df,
+                    status_col,
+                    amount_col
+                ),
                 use_container_width=True
             )
 
@@ -1213,7 +1474,8 @@ elif page == "Loan Types":
         st.stop()
 
     filter_fields = [
-        key for key in ["type", "status", "date"]
+        key
+        for key in ["type", "status", "date"]
         if columns.get(key)
     ]
 
@@ -1224,7 +1486,10 @@ elif page == "Loan Types":
         columns
     )
 
-    add_kpis(filtered_df, columns)
+    add_kpis(
+        filtered_df,
+        columns
+    )
 
     st.write("")
 
@@ -1290,7 +1555,8 @@ elif page == "Banks":
         st.stop()
 
     filter_fields = [
-        key for key in ["bank", "type", "status", "date"]
+        key
+        for key in ["bank", "type", "status", "date"]
         if columns.get(key)
     ]
 
@@ -1301,7 +1567,10 @@ elif page == "Banks":
         columns
     )
 
-    add_kpis(filtered_df, columns)
+    add_kpis(
+        filtered_df,
+        columns
+    )
 
     st.write("")
 
@@ -1363,7 +1632,8 @@ elif page == "Executives":
         st.stop()
 
     filter_fields = [
-        key for key in ["executive", "type", "status", "date"]
+        key
+        for key in ["executive", "type", "status", "date"]
         if columns.get(key)
     ]
 
@@ -1374,7 +1644,10 @@ elif page == "Executives":
         columns
     )
 
-    add_kpis(filtered_df, columns)
+    add_kpis(
+        filtered_df,
+        columns
+    )
 
     st.write("")
 
@@ -1431,7 +1704,8 @@ elif page == "Records":
     )
 
     filter_fields = [
-        key for key in [
+        key
+        for key in [
             "type",
             "status",
             "bank",
@@ -1450,7 +1724,9 @@ elif page == "Records":
 
     search_text = st.text_input(
         "Search Records",
-        placeholder="Search customer, bank, executive or loan details...",
+        placeholder=(
+            "Search customer, bank, executive or loan details..."
+        ),
         key="records_search"
     )
 
@@ -1503,7 +1779,8 @@ elif page == "KPI Metrics":
     )
 
     filter_fields = [
-        key for key in [
+        key
+        for key in [
             "type",
             "status",
             "bank",
@@ -1520,7 +1797,10 @@ elif page == "KPI Metrics":
         columns
     )
 
-    add_kpis(filtered_df, columns)
+    add_kpis(
+        filtered_df,
+        columns
+    )
 
     st.write("")
 
