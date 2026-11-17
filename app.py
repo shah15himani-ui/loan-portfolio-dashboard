@@ -5,9 +5,9 @@ import plotly.express as px
 import plotly.graph_objects as go
 import html
 
-# =========================================================
+# =====================================================
 # 1. PAGE CONFIGURATION
-# =========================================================
+# =====================================================
 
 st.set_page_config(
     page_title="JR Financial | Loan Portfolio Analytics",
@@ -16,9 +16,9 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# =========================================================
-# 2. DESIGN / CSS
-# =========================================================
+# =====================================================
+# 2. DESIGN AND CSS
+# =====================================================
 
 st.markdown("""
 <style>
@@ -30,13 +30,12 @@ st.markdown("""
     font-family: 'Inter', sans-serif;
 }
 
-.block-container {
-    padding: 1.2rem 1.5rem 1rem 1.5rem;
-    max-width: 100%;
-}
+/* TOP BAR */
 
 header[data-testid="stHeader"] {
-    background: #F2F5FA;
+    background: #F2F5FA !important;
+    height: 3.5rem !important;
+    z-index: 999999 !important;
 }
 
 [data-testid="stToolbar"],
@@ -45,8 +44,14 @@ header[data-testid="stHeader"] {
     display: none !important;
 }
 
-footer {
-    visibility: hidden;
+/* MAIN CONTENT SPACING */
+
+.block-container {
+    padding-top: 4.5rem !important;
+    padding-right: 1.5rem !important;
+    padding-bottom: 1rem !important;
+    padding-left: 1.5rem !important;
+    max-width: 100% !important;
 }
 
 /* SIDEBAR */
@@ -92,7 +97,11 @@ footer {
     color: #172B4D;
     font-size: 25px;
     font-weight: 800;
+    margin-top: 8px !important;
+    padding-top: 5px !important;
     margin-bottom: 3px;
+    position: relative;
+    z-index: 1;
 }
 
 .page-subtitle {
@@ -108,7 +117,7 @@ footer {
     font-size: 10px;
     font-weight: 800;
     letter-spacing: 1.4px;
-    margin: 10px 0;
+    margin: 12px 0;
 }
 
 div[data-testid="stSelectbox"] label,
@@ -154,7 +163,7 @@ div[data-testid="stPlotlyChart"] > div {
     border-radius: 10px !important;
 }
 
-/* CARD HEADINGS */
+/* CHART HEADINGS */
 
 .card-heading {
     color: #173253;
@@ -238,7 +247,7 @@ div[data-testid="stPlotlyChart"] > div {
     white-space: nowrap;
 }
 
-/* ACTION ROWS */
+/* PRIORITY ACTIONS */
 
 .action-row {
     display: flex;
@@ -304,13 +313,14 @@ div[data-testid="stPlotlyChart"] > div {
     font-size: 10px;
     padding: 15px 0 5px;
 }
+
 </style>
 """, unsafe_allow_html=True)
 
 
-# =========================================================
+# =====================================================
 # 3. CONSTANTS
-# =========================================================
+# =====================================================
 
 NAVIGATION = [
     "Summary",
@@ -350,9 +360,9 @@ STATUS_STYLES = {
 }
 
 
-# =========================================================
+# =====================================================
 # 4. DATA CLEANING
-# =========================================================
+# =====================================================
 
 def clean_loan_data(data):
 
@@ -414,9 +424,9 @@ def clean_loan_data(data):
     return data.reset_index(drop=True)
 
 
-# =========================================================
+# =====================================================
 # 5. HELPER FUNCTIONS
-# =========================================================
+# =====================================================
 
 def safe(value):
     return html.escape(str(value))
@@ -508,20 +518,19 @@ def show_chart(fig, height=260, key=None):
     )
 
 
-# =========================================================
+# =====================================================
 # 6. UPLOAD PAGE
-# =========================================================
+# =====================================================
 
 if "loan_df" not in st.session_state:
 
-    # IMPORTANT:
-    # Use st.html() here, not st.markdown().
-    # This ensures the HTML is rendered as a webpage design.
+    # The upload page uses st.html() to render HTML.
+    # The top spacing is controlled by block-container CSS.
 
     st.html("""
     <div style="
         max-width:680px;
-        margin:65px auto 25px;
+        margin:20px auto 25px;
         text-align:center;
         font-family:Inter,Arial,sans-serif;
     ">
@@ -592,7 +601,6 @@ if "loan_df" not in st.session_state:
         if uploaded_file is not None:
 
             try:
-
                 raw_data = pd.read_excel(uploaded_file)
                 cleaned = clean_loan_data(raw_data)
 
@@ -610,9 +618,9 @@ if "loan_df" not in st.session_state:
     st.stop()
 
 
-# =========================================================
+# =====================================================
 # 7. LOAD DATA
-# =========================================================
+# =====================================================
 
 df = st.session_state["loan_df"].copy()
 
@@ -620,9 +628,9 @@ df["Month"] = df["Date"].dt.to_period("M")
 df["Month Year"] = df["Month"].astype(str)
 
 
-# =========================================================
+# =====================================================
 # 8. SIDEBAR NAVIGATION
-# =========================================================
+# =====================================================
 
 st.sidebar.html("""
 <div class="brand-box">
@@ -677,9 +685,9 @@ if st.sidebar.button("Upload Another File", use_container_width=True):
     st.rerun()
 
 
-# =========================================================
-# 9. PAGE-WISE FILTER CONFIGURATION
-# =========================================================
+# =====================================================
+# 9. PAGE-WISE FILTERS
+# =====================================================
 
 PAGE_FILTERS = {
     "Summary": [
@@ -823,7 +831,10 @@ def display_filters(data, selected_page):
 
     with columns[-1]:
 
-        st.markdown("<div style='height:25px'></div>", unsafe_allow_html=True)
+        st.markdown(
+            "<div style='height:25px'></div>",
+            unsafe_allow_html=True
+        )
 
         st.button(
             "Reset",
@@ -836,9 +847,9 @@ def display_filters(data, selected_page):
     return result
 
 
-# =========================================================
+# =====================================================
 # 10. PAGE HEADER
-# =========================================================
+# =====================================================
 
 PAGE_TITLES = {
     "Summary": "Loan Portfolio Dashboard",
@@ -864,9 +875,9 @@ st.html(f"""
 """)
 
 
-# =========================================================
+# =====================================================
 # 11. APPLY FILTERS
-# =========================================================
+# =====================================================
 
 filtered = display_filters(df, page)
 
@@ -875,9 +886,9 @@ if filtered.empty:
     st.stop()
 
 
-# =========================================================
+# =====================================================
 # 12. COMMON METRICS
-# =========================================================
+# =====================================================
 
 total_apps = len(filtered)
 total_amount = filtered["Loan Amount"].sum()
@@ -909,15 +920,13 @@ disbursement_rate = len(disbursed) / total_apps * 100
 average_loan = filtered["Loan Amount"].mean()
 
 
-# =========================================================
+# =====================================================
 # 13. SUMMARY PAGE
-# =========================================================
+# =====================================================
 
 if page == "Summary":
 
     left, right = st.columns([1.5, 1], gap="small")
-
-    # MONTHLY FUNDING
 
     with left:
 
@@ -930,36 +939,21 @@ if page == "Summary":
 
             monthly_data = filtered.copy()
 
-            monthly_data["Date"] = pd.to_datetime(
-                monthly_data["Date"],
-                errors="coerce"
-            )
-
-            monthly_data["Loan Amount"] = pd.to_numeric(
-                monthly_data["Loan Amount"],
-                errors="coerce"
-            )
-
-            monthly_data = monthly_data.dropna(
-                subset=["Date", "Loan Amount"]
+            monthly_data["Month"] = (
+                monthly_data["Date"].dt.to_period("M")
             )
 
             monthly = (
                 monthly_data
-                .assign(
-                    Month=monthly_data["Date"].dt.to_period("M")
-                )
                 .groupby("Month", as_index=False)
-                .agg(
-                    Total_Funding=("Loan Amount", "sum")
-                )
+                .agg(Total_Funding=("Loan Amount", "sum"))
                 .sort_values("Month")
             )
 
             if not monthly.empty:
 
                 monthly["Month Label"] = (
-                    monthly["Month"].dt.strftime("%b %Y")
+                    monthly["Month"].astype(str)
                 )
 
                 monthly["Funding Cr"] = (
@@ -996,11 +990,7 @@ if page == "Summary":
                     )
                 )
 
-                show_chart(
-                    fig,
-                    height=260,
-                    key="monthly_funding_chart"
-                )
+                show_chart(fig, 260, "monthly_funding_chart")
 
             else:
                 st.info("No monthly funding data is available.")
@@ -1008,8 +998,6 @@ if page == "Summary":
             st.caption(
                 "₹ Cr · Aggregated from loan application dates"
             )
-
-    # CURRENT STAGE DISTRIBUTION
 
     with right:
 
@@ -1064,8 +1052,6 @@ if page == "Summary":
                 Disbursed amounts are tracked separately.
             </p>
             """)
-
-    # PRIORITY ACTIONS AND BUSINESS TEAM CASES
 
     left, right = st.columns([1.5, 1], gap="small")
 
@@ -1203,16 +1189,12 @@ if page == "Summary":
                     plot_bgcolor="#FFFFFF"
                 )
 
-                show_chart(
-                    fig,
-                    height=230,
-                    key="business_team_chart"
-                )
+                show_chart(fig, 230, "business_team_chart")
 
 
-# =========================================================
+# =====================================================
 # 14. LOAN TYPES PAGE
-# =========================================================
+# =====================================================
 
 elif page == "Loan Types":
 
@@ -1289,9 +1271,9 @@ elif page == "Loan Types":
     st.dataframe(display, use_container_width=True, hide_index=True)
 
 
-# =========================================================
+# =====================================================
 # 15. BANKS PAGE
-# =========================================================
+# =====================================================
 
 elif page == "Banks":
 
@@ -1362,9 +1344,9 @@ elif page == "Banks":
     st.dataframe(display, use_container_width=True, hide_index=True)
 
 
-# =========================================================
+# =====================================================
 # 16. EXECUTIVES PAGE
-# =========================================================
+# =====================================================
 
 elif page == "Executives":
 
@@ -1462,9 +1444,9 @@ elif page == "Executives":
     st.dataframe(display, use_container_width=True, hide_index=True)
 
 
-# =========================================================
+# =====================================================
 # 17. RECORDS PAGE
-# =========================================================
+# =====================================================
 
 elif page == "Records":
 
@@ -1493,9 +1475,9 @@ elif page == "Records":
         )
 
 
-# =========================================================
+# =====================================================
 # 18. KPI METRICS PAGE
-# =========================================================
+# =====================================================
 
 elif page == "KPI Metrics":
 
@@ -1599,9 +1581,9 @@ elif page == "KPI Metrics":
         )
 
 
-# =========================================================
+# =====================================================
 # 19. FOOTER
-# =========================================================
+# =====================================================
 
 st.html("""
 <div class="footer">
