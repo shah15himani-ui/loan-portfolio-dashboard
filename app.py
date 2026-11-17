@@ -520,7 +520,6 @@ if "loan_df" not in st.session_state:
             font-weight:800;
             letter-spacing:3px;
         ">
-            JR FINANCIAL
         </div>
 
         <h1 style="
