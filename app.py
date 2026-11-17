@@ -752,6 +752,7 @@ with top_right:
 # 10. PAGE FILTER FUNCTION
 # =========================================================
 
+
 def apply_page_filters(
     original_df,
     page_name,
@@ -771,24 +772,27 @@ def apply_page_filters(
 
     show_panel_title("Filter Data")
 
-    # Dropdowns are separated into three columns per row.
-    for start in range(0, len(filter_fields), 3):
+    # Clean single-select dropdowns
+    dropdown_fields = [
+        field for field in filter_fields
+        if field != "date"
+    ]
 
-        current_fields = filter_fields[start:start + 3]
+    if dropdown_fields:
 
         filter_cols = st.columns(
-            3,
+            min(len(dropdown_fields), 3),
             gap="large"
         )
 
-        for index, field_key in enumerate(current_fields):
+        for index, field_key in enumerate(dropdown_fields):
 
             col_name = columns.get(field_key)
 
             if not col_name or col_name not in filtered.columns:
                 continue
 
-            with filter_cols[index]:
+            with filter_cols[index % 3]:
 
                 options = sorted(
                     filtered[col_name]
@@ -798,26 +802,20 @@ def apply_page_filters(
                     .tolist()
                 )
 
-                selected = st.multiselect(
+                selected = st.selectbox(
                     field_key.replace("_", " ").title(),
-                    options=options,
-                    default=options,
+                    options=["All"] + options,
+                    index=0,
                     key=f"{page_name}_{field_key}_dropdown"
                 )
 
-                if selected:
+                if selected != "All":
 
                     filtered = filtered[
-                        filtered[col_name]
-                        .astype(str)
-                        .isin(selected)
+                        filtered[col_name].astype(str) == selected
                     ]
 
-                else:
-
-                    filtered = filtered.iloc[0:0]
-
-    # Date range control
+    # Date range filter
     if "date" in filter_fields and columns.get("date"):
 
         date_col_filter = columns["date"]
@@ -848,13 +846,9 @@ def apply_page_filters(
                     )
                 ]
 
-    st.markdown(
-        "</div>",
-        unsafe_allow_html=True
-    )
+    st.markdown("</div>", unsafe_allow_html=True)
 
     return filtered
-
 
 # =========================================================
 # 11. KPI FUNCTION
