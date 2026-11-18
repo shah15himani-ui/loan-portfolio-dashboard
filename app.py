@@ -66,10 +66,29 @@ html, body, [class*="css"] {
     color: #17233F;
 }
 
+/* Clean top spacing and dashboard layout */
 .block-container {
-    padding-top: 1.5rem;
-    padding-bottom: 2.5rem;
+    padding-top: 3.5rem !important;
+    padding-bottom: 2.5rem !important;
     max-width: 1600px;
+}
+
+/* Hide the default Streamlit toolbar */
+[data-testid="stToolbar"] {
+    display: none !important;
+}
+
+/* Remove the default header strip */
+[data-testid="stHeader"] {
+    background: transparent !important;
+}
+
+/* Keep dashboard headings fully visible */
+.main-heading {
+    display: block;
+    padding-top: 8px;
+    margin-top: 0;
+    line-height: 1.4;
 }
 
 [data-testid="stSidebar"] {
