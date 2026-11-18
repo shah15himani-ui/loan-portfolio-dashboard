@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from io import BytesIO
 import re
+import warnings
 
 import numpy as np
 import pandas as pd
@@ -220,7 +221,9 @@ for column in columns:
     if pd.api.types.is_datetime64_any_dtype(series):
         date_columns.append(column)
     elif not pd.api.types.is_numeric_dtype(series):
-        parsed = pd.to_datetime(series, errors="coerce")
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", UserWarning)
+            parsed = pd.to_datetime(series, errors="coerce")
         if parsed.notna().mean() >= .7 and parsed.nunique() > 2:
             date_columns.append(column)
 
@@ -313,7 +316,7 @@ with st.sidebar:
             filtered = base[(base["_dashboard_date"] >= start_ts) &
                             (base["_dashboard_date"] < end_ts + pd.Timedelta(days=1))]
 
-    st.button("↺ Reset all filters", on_click=reset_filters, use_container_width=True)
+    st.button("↺ Reset all filters", on_click=reset_filters, width="stretch")
     st.divider()
     st.caption("MarketPulse · interactive analytics portfolio demo")
 
@@ -358,7 +361,7 @@ if drill_value is not None:
     chip_col.markdown(f'<span class="chip">Drilled into {dimension_column}: {drill_value}</span>'
                       '<span class="source-note">All charts below are filtered to this selection.</span>',
                       unsafe_allow_html=True)
-    clear_col.button("✕ Clear drill-down", on_click=clear_drill, use_container_width=True)
+    clear_col.button("✕ Clear drill-down", on_click=clear_drill, width="stretch")
 else:
     st.caption("💡 Tip: click any bar in “Value by …” to drill the whole dashboard into that group.")
 
@@ -449,7 +452,7 @@ with tab_overview:
                 fig.update_layout(xaxis_title=measure, yaxis_title="Records", showlegend=False)
                 fig.update_xaxes(tickprefix=tick, separatethousands=True, gridcolor="#edf1f6")
                 style_fig(fig, height=330)
-            st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
+            st.plotly_chart(fig, width="stretch", config={"displayModeBar": False})
 
     with right_chart:
         with st.container(border=True):
@@ -472,15 +475,15 @@ with tab_overview:
                 bar_fig.update_xaxes(tickprefix=tick, separatethousands=True, gridcolor="#edf1f6", zeroline=False)
                 style_fig(bar_fig, height=260)
                 try:
-                    st.plotly_chart(bar_fig, use_container_width=True, config={"displayModeBar": False},
+                    st.plotly_chart(bar_fig, width="stretch", config={"displayModeBar": False},
                                     on_select="rerun", selection_mode="points", key=bar_key)
                 except TypeError:  # older Streamlit without selection support
-                    st.plotly_chart(bar_fig, use_container_width=True, config={"displayModeBar": False})
-                    st.caption("Upgrade Streamlit (>=1.35) to enable click-to-drill.")
+                    st.plotly_chart(bar_fig, width="stretch", config={"displayModeBar": False})
+                    st.caption("Upgrade Streamlit (>=1.50) to enable click-to-drill.")
             else:
                 hist = px.histogram(view, x=measure, nbins=12, color_discrete_sequence=[PALETTE["teal"]])
                 hist.update_layout(xaxis_title=measure, yaxis_title="Records")
-                st.plotly_chart(style_fig(hist, height=300), use_container_width=True, config={"displayModeBar": False})
+                st.plotly_chart(style_fig(hist, height=300), width="stretch", config={"displayModeBar": False})
 
     lower_left, lower_right = st.columns([1.05, 1], gap="medium")
 
@@ -501,7 +504,7 @@ with tab_overview:
                                     showlegend=len(comp) <= 8,
                                     annotations=[{"text": f"<b>{format_amount(comp[measure].sum(), tick) if is_money(measure) else f'{int(comp[measure].sum()):,}'}</b>",
                                                   "showarrow": False, "font": {"size": 16, "color": PALETTE["navy"]}}])
-                st.plotly_chart(style_fig(donut, height=300, top=5), use_container_width=True, config={"displayModeBar": False})
+                st.plotly_chart(style_fig(donut, height=300, top=5), width="stretch", config={"displayModeBar": False})
             else:
                 st.info("Choose a text column in the sidebar to see portfolio composition.")
 
@@ -518,12 +521,12 @@ with tab_overview:
                                  legend={"orientation": "h", "y": 1.12, "x": 0}, hovermode="x unified")
                 pf.update_yaxes(tickprefix=currency, separatethousands=True, gridcolor="#edf1f6", zeroline=False)
                 pf.update_xaxes(showgrid=False)
-                st.plotly_chart(style_fig(pf, height=300, top=20), use_container_width=True, config={"displayModeBar": False})
+                st.plotly_chart(style_fig(pf, height=300, top=20), width="stretch", config={"displayModeBar": False})
             elif profit_column:
                 pf = px.scatter(view, x=amount_column, y=profit_column, color=dimension_column, opacity=.75,
                                 color_discrete_sequence=SEQUENCE)
                 pf.update_layout(legend_title=None)
-                st.plotly_chart(style_fig(pf, height=300, top=15), use_container_width=True, config={"displayModeBar": False})
+                st.plotly_chart(style_fig(pf, height=300, top=15), width="stretch", config={"displayModeBar": False})
             else:
                 st.info("Map a profit or comparison column to unlock profitability analysis.")
 
@@ -547,7 +550,7 @@ with tab_explore:
                                   color_continuous_scale=["#dce8ff", PALETTE["blue"], PALETTE["navy"]])
                 tree.update_layout(coloraxis_showscale=False)
                 tree.update_traces(hovertemplate="%{label}<br>%{value:,.0f}<extra></extra>")
-                st.plotly_chart(style_fig(tree, height=380), use_container_width=True, config={"displayModeBar": False})
+                st.plotly_chart(style_fig(tree, height=380), width="stretch", config={"displayModeBar": False})
             else:
                 st.info("Pick a breakdown column to see the hierarchy.")
 
@@ -564,7 +567,7 @@ with tab_explore:
                 heat = px.imshow(pivot, aspect="auto", text_auto=".2s",
                                  color_continuous_scale=["#f1f6ff", PALETTE["blue"], PALETTE["navy"]])
                 heat.update_layout(coloraxis_showscale=False, xaxis_title=None, yaxis_title=None)
-                st.plotly_chart(style_fig(heat, height=380), use_container_width=True, config={"displayModeBar": False})
+                st.plotly_chart(style_fig(heat, height=380), width="stretch", config={"displayModeBar": False})
             else:
                 st.info("Choose two different breakdown columns to see the heatmap.")
 
@@ -597,7 +600,7 @@ with tab_explore:
         sfig.update_layout(legend_title=None)
         sfig.update_xaxes(gridcolor="#edf1f6")
         sfig.update_yaxes(gridcolor="#edf1f6")
-        st.plotly_chart(style_fig(sfig, height=380), use_container_width=True, config={"displaylogo": False})
+        st.plotly_chart(style_fig(sfig, height=380), width="stretch", config={"displaylogo": False})
 
 # ================================================================ DATA
 with tab_data:
@@ -611,7 +614,7 @@ with tab_data:
         st.markdown('<div class="section-title">Filtered records</div>', unsafe_allow_html=True)
     with dl:
         st.download_button("Download CSV", data=view.drop(columns=helper_cols, errors="ignore").to_csv(index=False).encode("utf-8"),
-                           file_name="marketpulse_filtered_data.csv", mime="text/csv", use_container_width=True)
+                           file_name="marketpulse_filtered_data.csv", mime="text/csv", width="stretch")
 
     tc = st.columns([2, 2, 1])
     query = tc[0].text_input("Search records", placeholder="Type to search any column…", key="f_search")
@@ -626,6 +629,6 @@ with tab_data:
         table = table.sort_values(sort_col, ascending=False)
 
     st.markdown(f'<div class="section-note">Showing {len(table):,} of {len(raw_data):,} rows from {source_label}</div>', unsafe_allow_html=True)
-    st.dataframe(table, use_container_width=True, hide_index=True, height=420)
+    st.dataframe(table, width="stretch", hide_index=True, height=420)
 
 st.markdown('<p class="source-note">MarketPulse is a portfolio demo. Sample records are synthetic; uploaded data stays in the current app session.</p>', unsafe_allow_html=True)
