@@ -534,11 +534,11 @@ def status_counts(data):
 # UPLOAD LANDING PAGE
 # =========================================================
 
+
 def upload_landing_page():
 
-    # Top hero
     st.markdown(
-        '<div class="top-label">WORK SMARTER WITH YOUR DATA</div>',
+        '<div class="top-label">JR FINANCIAL</div>',
         unsafe_allow_html=True
     )
 
@@ -549,39 +549,33 @@ def upload_landing_page():
 
     st.markdown(
         '<div class="hero-subtitle">'
-        'Upload. Analyse. Track. Make better financial decisions.'
+        'Upload your Excel workbook to get started.'
         '</div>',
         unsafe_allow_html=True
     )
 
-    # Main upload layout
-    left, right = st.columns([1.35, 0.85], gap="large")
+    # Centered upload section
+    _, center, _ = st.columns([1, 1.5, 1])
 
-    with left:
+    with center:
+
         st.markdown('<div class="upload-panel">', unsafe_allow_html=True)
 
         st.markdown(
-            '<div class="upload-icon">📊</div>',
+            '<div class="upload-icon">📁</div>',
             unsafe_allow_html=True
         )
 
         st.markdown(
-            '<div class="upload-title">Upload your loan data</div>',
-            unsafe_allow_html=True
-        )
-
-        st.markdown(
-            '<div class="upload-description">'
-            'Select your Excel workbook to generate your interactive '
-            'loan portfolio dashboard.'
-            '</div>',
+            '<div class="upload-title">Upload Excel File</div>',
             unsafe_allow_html=True
         )
 
         uploaded_file = st.file_uploader(
             "Choose your Excel workbook",
             type=["xlsx", "xls"],
-            key="landing_excel_upload"
+            key="landing_excel_upload",
+            label_visibility="collapsed"
         )
 
         if uploaded_file is not None:
@@ -602,11 +596,10 @@ def upload_landing_page():
                 )
 
                 st.success(
-                    f"Workbook detected: {len(preview_df):,} rows "
-                    f"and {len(preview_df.columns)} columns."
+                    f"File uploaded successfully: {len(preview_df):,} rows"
                 )
 
-                with st.expander("Preview uploaded data"):
+                with st.expander("Preview Excel data"):
                     st.dataframe(
                         preview_df.head(8),
                         use_container_width=True,
@@ -614,7 +607,7 @@ def upload_landing_page():
                     )
 
                 if st.button(
-                    "Generate My Dashboard →",
+                    "Open Dashboard →",
                     type="primary",
                     use_container_width=True
                 ):
@@ -626,93 +619,17 @@ def upload_landing_page():
                         st.rerun()
 
             except Exception as error:
-                st.error(f"Could not read this workbook: {error}")
-
-        st.markdown("""
-        <div style="text-align:center;color:#8994A8;font-size:10px;margin-top:14px;">
-            Supported formats: XLSX and XLS
-        </div>
-        """, unsafe_allow_html=True)
+                st.error(f"Unable to read Excel file: {error}")
 
         st.markdown('</div>', unsafe_allow_html=True)
-
-    with right:
-        st.markdown('<div class="panel">', unsafe_allow_html=True)
-
-        panel_heading(
-            "Your dashboard, simplified",
-            "Everything you need to understand your loan portfolio."
-        )
-
-        features = [
-            ("📈", "Portfolio Analytics",
-             "Track applications, loan values and disbursement performance."),
-            ("🎯", "Status Monitoring",
-             "Understand pending, approved, rejected and disbursed applications."),
-            ("🏦", "Bank Performance",
-             "Compare lenders and identify portfolio concentration."),
-            ("👥", "Executive Performance",
-             "Review application volumes and team-level performance.")
-        ]
-
-        for icon, title, description in features:
-            st.markdown(f"""
-            <div style="
-                display:flex;
-                gap:12px;
-                align-items:flex-start;
-                padding:13px 0;
-                border-bottom:1px solid #EEF1F7;
-            ">
-                <div style="
-                    width:37px;
-                    height:37px;
-                    flex-shrink:0;
-                    display:flex;
-                    justify-content:center;
-                    align-items:center;
-                    background:#EFF3FF;
-                    border-radius:11px;
-                    font-size:17px;
-                ">{icon}</div>
-                <div>
-                    <div style="font-size:12px;font-weight:800;color:#14213D;">
-                        {title}
-                    </div>
-                    <div style="font-size:10px;color:#78849A;line-height:1.5;margin-top:4px;">
-                        {description}
-                    </div>
-                </div>
-            </div>
-            """, unsafe_allow_html=True)
-
-        st.markdown('</div>', unsafe_allow_html=True)
-
-    # Bottom feature strip
-    st.markdown("<br>", unsafe_allow_html=True)
-
-    f1, f2, f3 = st.columns(3)
-
-    feature_data = [
-        ("01", "Easy Upload", "Import your existing Excel workbook."),
-        ("02", "Instant Insights", "Explore your portfolio through interactive charts."),
-        ("03", "Export & Review", "Search records and export your results.")
-    ]
-
-    for col, item in zip([f1, f2, f3], feature_data):
-        with col:
-            st.markdown(f"""
-            <div class="upload-feature">
-                <div style="font-size:10px;font-weight:800;color:#315CF5;margin-bottom:8px;">
-                    {item[0]}
-                </div>
-                <div class="upload-feature-title">{item[1]}</div>
-                <div class="upload-feature-text">{item[2]}</div>
-            </div>
-            """, unsafe_allow_html=True)
 
     st.markdown("""
-    <div style="text-align:center;color:#A0A9B9;font-size:10px;margin-top:28px;">
+    <div style="
+        text-align:center;
+        color:#A0A9B9;
+        font-size:10px;
+        margin-top:30px;
+    ">
         JR FINANCIAL • LOAN PORTFOLIO ANALYTICS
     </div>
     """, unsafe_allow_html=True)
