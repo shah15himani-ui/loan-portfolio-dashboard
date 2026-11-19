@@ -7,10 +7,10 @@ import plotly.express as px
 import streamlit as st
 
 st.set_page_config(
-    page_title="JR Financial | Loan Portfolio",
+    page_title="Loan Portfolio Dashboard",
     page_icon="📊",
     layout="wide",
-    initial_sidebar_state="expanded",
+    initial_sidebar_state="auto",
 )
 
 PINE = "#28674c"
@@ -19,33 +19,64 @@ MUTED = "#506356"
 LINE = "#dce5d8"
 PAPER = "#fcfdf9"
 STATUS_COLORS = {"Disbursed": PINE, "Pending": "#a5c75f", "Other": "#ccd9c8"}
-PALETTE = [PINE, "#a5c75f", "#c28a44", "#72969b", "#a988a4"]
+PALETTE = ["#6f9144", "#4f8183", "#bd8446", "#8a6c92", "#637c9b"]
+PAGE_HEADERS = {
+    "Upload": ("Loan portfolio", "dashboard", "Upload an Excel workbook to track applications, compare lenders, and see how your portfolio changes over time."),
+    "Overview": ("Portfolio", "overview", "Monitor application status, disbursements, and portfolio trends."),
+    "Loan Types": ("Loan", "types", "Compare application volumes and portfolio value by loan product."),
+    "Banks": ("Bank", "breakdown", "Compare application volumes and portfolio value across lenders."),
+    "Executives": ("Executive", "breakdown", "See application volumes and portfolio value by executive."),
+    "Records": ("Loan", "records", "Search and export individual applications from the workbook."),
+    "KPI Metrics": ("Portfolio", "KPI metrics", "Review disbursement rate, average loan amount, and application counts."),
+}
 
-st.markdown(
+st.html(
     """
     <style>
     .stApp {
-        background: radial-gradient(ellipse at 94% 0, #e0ebd9, transparent 37rem), #f0f4ed;
-        color: #172820;
+        --surface: #fcfdf9;
+        --ground: #eff3ec;
+        --text: #172820;
+        --muted: #506356;
+        --line: #dce5d8;
+        --accent: #28674c;
+        --selected: #e5efdf;
+        --shadow: 0 4px 16px #102a1708;
+        background: var(--ground);
+        color: var(--text);
     }
-    [data-testid="stHeader"] { background: #f0f4edf2; }
-    .block-container { max-width: 1360px; padding-top: 4rem; padding-bottom: 3rem; }
-    [data-testid="stSidebar"] { background: #fcfdf9; border-right: 1px solid #dce5d8; }
-    .stApp h2, .stApp h3, .stApp h4 { color: #172820; letter-spacing: -.028em; }
-    [data-testid="stCaptionContainer"], [data-testid="stCaptionContainer"] p { color: #506356; }
+    .stApp [data-testid="stHeader"] { background: var(--ground); color: var(--text); }
+    .stApp .block-container {
+        max-width: 1360px;
+        padding: 3.85rem clamp(1rem, 3.2vw, 2.75rem) 2rem;
+    }
+    [data-testid="stSidebar"] {
+        background: var(--surface);
+        color: var(--text);
+        border-right: 1px solid var(--line);
+    }
+    [data-testid="stSidebarContent"] [data-testid="stSidebarUserContent"] { padding-top: 1.2rem; }
+    .stApp h2, .stApp h3, .stApp h4 { color: var(--text); letter-spacing: -.027em; }
+    .stApp h3 { font-size: 1.14rem; }
+    .stApp [data-testid="stCaptionContainer"] { opacity: 1; }
+    .stApp [data-testid="stCaptionContainer"],
+    .stApp [data-testid="stCaptionContainer"] p { color: var(--muted); }
 
-    .jr-hero {
+    .portfolio-header {
         position: relative;
         isolation: isolate;
         overflow: hidden;
-        margin-bottom: 1rem;
-        padding: clamp(1.75rem, 4vw, 3.6rem);
-        border-radius: 26px;
-        background: radial-gradient(ellipse at 100% 8%, #304a29, transparent 61%), #0d2018;
-        box-shadow: 0 14px 36px #102a171f;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: .7rem 1rem;
+        padding: 1.4rem clamp(1.1rem, 3vw, 2rem) 1.55rem;
+        border-radius: 18px;
+        background: radial-gradient(ellipse at 101% 0%, #32532f, transparent 67%), #0d2018;
         color: #f6f8ee;
     }
-    .jr-hero::after {
+    .portfolio-header::after {
         position: absolute;
         z-index: -1;
         inset: 0 0 0 auto;
@@ -54,63 +85,76 @@ st.markdown(
         mask-image: linear-gradient(90deg, transparent, #0008);
         content: "";
     }
-    .jr-brand { display: flex; align-items: center; gap: .7rem; font-size: 1rem; font-weight: 650; }
-    .jr-monogram {
-        display: inline-grid;
-        width: 2.35rem;
-        height: 2.35rem;
-        place-items: center;
-        border-radius: .65rem;
-        background: #dbf894;
-        color: #172820;
-        font: bold 1.12rem Georgia, serif;
-        letter-spacing: -.06em;
-    }
-    .jr-hero h1 {
-        margin: .85rem 0 .65rem;
+    .portfolio-header h1 {
+        margin: 0 0 .45rem;
         padding: 0;
         color: #f6f8ee;
-        font-size: clamp(2.5rem, 6vw, 5.5rem);
-        line-height: .99;
+        font-size: clamp(1.85rem, 3.6vw, 3.05rem);
+        line-height: 1.05;
         font-weight: 750;
-        letter-spacing: -.045em;
+        letter-spacing: -.038em;
     }
-    .jr-hero .jr-accent { color: #dbf894; }
-    .jr-hero p { max-width: 37rem; margin: 0; color: #d8e5d6; font-size: clamp(1rem, 1.8vw, 1.19rem); }
-    .jr-hero--compact { padding-block: 1.8rem 2rem; }
-    .jr-hero--compact h1 { font-size: clamp(2.15rem, 4vw, 4rem); }
-    .jr-tag {
-        display: inline-block;
-        margin-top: .9rem;
+    .portfolio-header .heading-accent { color: #dbf894; }
+    .portfolio-header p { max-width: 42rem; margin: 0; color: #d8e5d6; font-size: .95rem; }
+    .sample-label {
         padding: .2rem .65rem;
         border: 1px solid #d4ed9e66;
         border-radius: 999px;
         color: #e5f7bb;
-        font-size: .85rem;
+        font-size: .8rem;
         font-weight: 650;
+        white-space: nowrap;
     }
-    [data-testid="stMetric"], [data-testid="stPlotlyChart"] {
-        background: #fcfdf9;
-        border: 1px solid #dce5d8;
+    [data-testid="stMetric"], [class*="st-key-portfolio-panel-"] {
+        background: var(--surface);
+        border-color: var(--line);
         border-radius: 16px;
-        box-shadow: 0 4px 16px #102a1708;
+        box-shadow: var(--shadow);
     }
-    [data-testid="stMetric"] { height: 100%; padding: 1rem; }
-    [data-testid="stMetricLabel"] p { color: #506356; }
-    [data-testid="stMetricValue"] { color: #172820; font-weight: 680; }
-    [data-testid="stPlotlyChart"] { padding: .5rem; }
-    [data-testid="stFileUploaderDropzone"] { background: #e6efe2; border: 1px dashed #9db39f; }
-    [data-testid="stWidgetLabel"] p, [data-testid="stFileUploaderDropzone"] { color: #172820; }
-    button[data-testid="stBaseButton-primary"] { background: #28674c; border-color: #28674c; color: #fff; }
-    button[data-testid="stBaseButton-primary"]:hover { background: #1a4f38; border-color: #1a4f38; color: #fff; }
+    [data-testid="stMetric"] { height: 100%; padding: .78rem 1rem; border: 1px solid var(--line); }
+    .stApp [data-testid="stMetricLabel"] p { color: var(--muted); }
+    .stApp [data-testid="stMetricValue"] { color: var(--text); font-weight: 680; }
+    [data-testid="stFileUploaderDropzone"] { background: var(--selected); border: 1px dashed #9db39f; }
+    .stApp [data-testid="stWidgetLabel"] p, .stApp [data-testid="stFileUploaderDropzone"] { color: var(--text); }
+    .stApp :is([data-baseweb="input"], [data-baseweb="base-input"], [data-baseweb="select"] > div) {
+        background: var(--surface);
+        color: var(--text);
+        border-color: var(--line);
+    }
+    .stApp :is([data-baseweb="input"], [data-baseweb="select"] > div):focus-within { border-color: var(--accent); }
+    .stApp button[data-testid="stBaseButton-primary"] { background: var(--accent); border-color: var(--accent); color: #fff; }
+    .stApp button[data-testid="stBaseButton-primary"]:hover { background: #1a4f38; border-color: #1a4f38; }
+    .stApp button[data-testid="stBaseButton-secondary"] { background: var(--surface); border-color: var(--line); color: var(--text); }
+    .stApp button[data-testid="stBaseButton-secondary"]:hover { background: var(--selected); border-color: var(--accent); color: var(--accent); }
+    .stApp button:focus-visible { outline: 2px solid #558553; outline-offset: 2px; }
+
+    .st-key-portfolio_navigation [role="radiogroup"] { gap: .15rem; }
+    .st-key-portfolio_navigation [role="radiogroup"] label { margin: 0; padding: .32rem .5rem; border-radius: 8px; }
+    .st-key-portfolio_navigation [role="radiogroup"] label:hover,
+    .stApp [role="radiogroup"] label:has(input:checked) { background: var(--selected); }
+    .stApp [role="radiogroup"] label:has(input:checked) > div:first-child { background: var(--accent); border-color: var(--accent); }
+    .stApp [role="radiogroup"] label:has(input:checked) p { color: #1e5a40; font-weight: 650; }
+    .st-key-trend_measure [role="radiogroup"] { gap: .4rem; }
+    .st-key-trend_measure [role="radiogroup"] label {
+        margin: 0;
+        padding: .2rem .5rem;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+    }
+    [data-testid="stPlotlyChart"] .modebar {
+        padding-inline: 4px;
+        border: 1px solid var(--line);
+        border-radius: 7px;
+        background: #edf3e9;
+    }
+    [data-testid="stPlotlyChart"] .modebar-btn:hover { background: var(--selected); }
 
     @media (max-width: 640px) {
-        .block-container { padding-top: 3rem; }
-        .jr-hero { border-radius: 18px; }
+        .stApp .block-container { padding-top: 3.65rem; }
+        .portfolio-header { border-radius: 14px; }
     }
     </style>
-    """,
-    unsafe_allow_html=True,
+    """
 )
 
 if "data" not in st.session_state:
@@ -119,25 +163,19 @@ if "page" not in st.session_state:
     st.session_state.page = "Upload"
 
 
-def portfolio_header(overview=False):
-    title, accent = ("Portfolio", "overview.") if overview else ("Loan portfolio", "dashboard.")
-    description = (
-        "Monitor application status, disbursements, and monthly portfolio value."
-        if overview
-        else "Upload an Excel workbook to track applications, compare lenders, and see how your portfolio changes over time."
-    )
-    variant = " jr-hero--compact" if overview else ""
-    tag = '<span class="jr-tag">Sample data</span>' if overview and st.session_state.get("demo") else ""
-    st.markdown(
+def portfolio_header(page):
+    title, accent, description = PAGE_HEADERS[page]
+    tag = '<span class="sample-label">Sample data</span>' if page != "Upload" and st.session_state.get("demo") else ""
+    st.html(
         f"""
-        <header class="jr-hero{variant}">
-          <div class="jr-brand"><span class="jr-monogram" aria-hidden="true">JR</span> JR Financial</div>
-          <h1>{title} <span class="jr-accent">{accent}</span></h1>
-          <p>{description}</p>
-          {tag}
+        <header class="portfolio-header">
+            <div>
+                <h1>{title} <span class="heading-accent">{accent}</span></h1>
+                <p>{description}</p>
+            </div>
+            {tag}
         </header>
-        """,
-        unsafe_allow_html=True,
+        """
     )
 
 def detect(df, aliases):
@@ -196,23 +234,137 @@ def clean(df):
         df["_Date"] = pd.NaT
     return df, found
 
-def chart(fig, height=320):
+def panel(name):
+    return st.container(border=True, key=f"portfolio-panel-{name}")
+
+
+def chart(fig, name, height=296):
     fig.update_layout(
         template="plotly_white",
         height=height,
-        margin=dict(l=16, r=20, t=20, b=20),
+        margin=dict(l=12, r=18, t=37, b=22),
         paper_bgcolor=PAPER,
         plot_bgcolor=PAPER,
         font=dict(color=INK, size=13),
         legend=dict(orientation="h", x=0.5, xanchor="center", y=-0.08, yanchor="top"),
-        hoverlabel=dict(bgcolor=PAPER, font_color=INK),
+        hoverlabel=dict(bgcolor="#122c21", bordercolor=PINE, font_color="#f6f8ee"),
+        modebar=dict(color=MUTED, activecolor=PINE),
     )
     fig.update_xaxes(gridcolor=LINE, tickfont=dict(color=MUTED), automargin=True)
     fig.update_yaxes(gridcolor=LINE, tickfont=dict(color=MUTED), automargin=True)
-    st.plotly_chart(fig, use_container_width=True, theme=None, config={"displaylogo": False})
+    st.plotly_chart(
+        fig,
+        key=name,
+        use_container_width=True,
+        theme=None,
+        config={
+            "displayModeBar": True,
+            "displaylogo": False,
+            "modeBarButtonsToRemove": ["select2d", "lasso2d", "zoomIn2d", "zoomOut2d", "autoScale2d"],
+            "toImageButtonOptions": {"filename": name, "scale": 2},
+        },
+    )
 
 def summary(data, key):
     return data.groupby(key, dropna=False).agg(Applications=("_Amount", "size"), Portfolio=("_Amount", "sum")).reset_index().sort_values("Applications", ascending=False)
+
+
+def ranked_bar(rows, dimension, measure="Applications"):
+    rows = rows.assign(Amount=rows["Portfolio"].map(money))
+    fig = px.bar(
+        rows.sort_values(measure, kind="stable"),
+        x=measure,
+        y=dimension,
+        orientation="h",
+        color_discrete_sequence=[PINE],
+        custom_data=["Amount", "Applications"],
+    )
+    fig.update_traces(
+        hovertemplate="<b>%{y}</b><br>%{customdata[1]:,} applications<br>Portfolio %{customdata[0]}<extra></extra>",
+    )
+    fig.update_layout(bargap=0.36)
+    fig.update_yaxes(title=None, showgrid=False)
+    if measure == "Portfolio":
+        fig.update_xaxes(title="Portfolio value", tickprefix="₹")
+    else:
+        fig.update_xaxes(title="Applications", tickformat=",d")
+    return fig
+
+
+def monthly_trend(data):
+    st.subheader("Monthly portfolio trend")
+    dated = data.dropna(subset=["_Date"]).copy()
+    if dated.empty:
+        st.info("No application dates are available for this view.")
+        return
+
+    measure = st.radio(
+        "Trend metric",
+        ["Portfolio value", "Applications"],
+        horizontal=True,
+        label_visibility="collapsed",
+        key="trend_measure",
+    )
+    dated["Month"] = dated["_Date"].dt.to_period("M").dt.to_timestamp()
+    monthly = summary(dated, "Month").sort_values("Month")
+    if measure == "Portfolio value":
+        column, tick_options = "Portfolio", {"tickprefix": "₹"}
+        monthly["Hover value"] = monthly[column].map(money)
+    else:
+        column, tick_options = "Applications", {"tickformat": ",d"}
+        monthly["Hover value"] = monthly[column].map(lambda value: f"{value:,} applications")
+
+    fig = px.area(monthly, x="Month", y=column, markers=True, custom_data=["Hover value"])
+    fig.update_traces(
+        fillcolor="#dcebcf",
+        line=dict(color=PINE, width=3),
+        marker=dict(size=8, color=PINE, line=dict(color=PAPER, width=1.5)),
+        hovertemplate="<b>%{x|%b %Y}</b><br>%{customdata[0]}<extra></extra>",
+    )
+    fig.update_layout(hovermode="x")
+    month_padding = pd.Timedelta(days=9)
+    first_month, last_month = monthly["Month"].iloc[0], monthly["Month"].iloc[-1]
+    fig.update_xaxes(
+        title=None,
+        tickformat="%b %y",
+        showgrid=False,
+        range=[first_month - month_padding, last_month + month_padding],
+        dtick="M1" if first_month == last_month else None,
+    )
+    fig.update_yaxes(title=None, rangemode="tozero", **tick_options)
+    chart(fig, "monthly-portfolio-trend", height=258)
+
+
+def status_chart(data):
+    st.subheader("Application status")
+    counts = data["_Status"].value_counts().rename_axis("Status").reset_index(name="Count")
+    if counts.empty:
+        st.info("No records in this date range.")
+        return
+
+    fig = px.pie(
+        counts,
+        names="Status",
+        values="Count",
+        color="Status",
+        hole=.69,
+        color_discrete_map=STATUS_COLORS,
+        color_discrete_sequence=PALETTE,
+    )
+    fig.update_traces(
+        textinfo="none",
+        marker=dict(line=dict(color=PAPER, width=2)),
+        hovertemplate="<b>%{label}</b><br>%{value:,} applications<br>%{percent} of total<extra></extra>",
+    )
+    fig.add_annotation(
+        text=f"<b>{len(data):,}</b><br>Applications",
+        x=.5,
+        y=.5,
+        showarrow=False,
+        font=dict(size=15),
+    )
+    chart(fig, "application-status", height=314)
+
 
 def open_portfolio(raw, *, demo=False):
     st.session_state.data, st.session_state.found = clean(raw)
@@ -241,9 +393,9 @@ def sample_portfolio():
 
 
 def upload():
-    portfolio_header()
+    portfolio_header("Upload")
     upload_area, sample_area = st.columns([1.7, 1])
-    with upload_area, st.container(border=True):
+    with upload_area, panel("upload"):
         st.subheader("Upload your workbook")
         st.caption("Select an Excel file, then choose the worksheet with your loan applications.")
         file = st.file_uploader("Excel workbook", type=["xlsx", "xls"], label_visibility="collapsed")
@@ -261,7 +413,7 @@ def upload():
             except Exception as exc:
                 st.error(f"Unable to read workbook: {exc}")
 
-    with sample_area, st.container(border=True):
+    with sample_area, panel("sample"):
         st.subheader("Explore a sample portfolio")
         st.caption("Try the dashboard with 248 fictional loan applications.")
         if st.button("View sample dashboard", use_container_width=True):
@@ -271,10 +423,7 @@ if st.session_state.data is None or st.session_state.page == "Upload":
     upload()
     st.stop()
 
-st.sidebar.markdown("## JR Financial")
-st.sidebar.caption("Loan portfolio analytics")
-if st.session_state.get("demo"):
-    st.sidebar.caption("Sample data")
+st.sidebar.markdown("## Loan portfolio")
 pages = ["Overview", "Loan Types", "Banks", "Executives", "Records", "KPI Metrics"]
 page = st.sidebar.radio("Navigation", pages, key="portfolio_navigation")
 st.session_state.page = page
@@ -283,8 +432,8 @@ if st.sidebar.button("Upload new data", use_container_width=True):
     st.rerun()
 
 data = st.session_state.data.copy()
+portfolio_header(page)
 if page == "Overview":
-    portfolio_header(overview=True)
     if data["_Date"].notna().any():
         date_filter, _ = st.columns([1, 2])
         valid = data["_Date"].dropna()
@@ -299,8 +448,6 @@ if page == "Overview":
         if isinstance(dates, (tuple, list)) and len(dates) == 2:
             data = data[data["_Date"].dt.date.between(dates[0], dates[1])]
     st.caption(f"Showing {len(data):,} of {len(st.session_state.data):,} records")
-else:
-    st.markdown(f"## {page}")
 
 status = data["_Status"].str.lower()
 disbursed = status.str.contains("disburs", na=False)
@@ -311,78 +458,58 @@ if page == "Overview":
     b.metric("Portfolio Value", money(data["_Amount"].sum()))
     c.metric("Disbursed", f"{disbursed.sum():,}")
     d.metric("Pending", f"{pending.sum():,}")
-    left, right = st.columns([1, 1.2])
-    with left:
-        st.markdown("#### Application Status")
-        counts = data["_Status"].value_counts().reset_index()
-        counts.columns = ["Status", "Count"]
-        if not counts.empty:
-            fig = px.pie(
-                counts,
-                names="Status",
-                values="Count",
-                color="Status",
-                hole=.7,
-                color_discrete_map=STATUS_COLORS,
-                color_discrete_sequence=PALETTE,
-            )
-            fig.update_traces(textinfo="none", marker=dict(line=dict(color=PAPER, width=2)))
-            fig.add_annotation(text=f"<b>{len(data):,}</b><br>Applications", x=.5, y=.5, showarrow=False)
-            chart(fig)
-        else:
+    left, right = st.columns([1.55, 1])
+    with left, panel("trend"):
+        monthly_trend(data)
+    with right, panel("status"):
+        status_chart(data)
+
+    with panel("portfolio-status"):
+        st.subheader("Portfolio value by status")
+        by_status = summary(data, "_Status")
+        if by_status.empty:
             st.info("No records in this date range.")
-    with right:
-        st.markdown("#### Portfolio by Status")
-        s = summary(data, "_Status").sort_values("Portfolio")
-        if not s.empty:
-            fig = px.bar(s, x="Portfolio", y="_Status", orientation="h", color_discrete_sequence=[PINE])
-            fig.update_layout(yaxis_title="", xaxis_title="Amount (₹)")
-            chart(fig)
         else:
-            st.info("No records in this date range.")
-    st.markdown("#### Monthly Portfolio Trend")
-    dated = data.dropna(subset=["_Date"]).copy()
-    if not dated.empty:
-        dated["Month"] = dated["_Date"].dt.to_period("M").astype(str)
-        monthly = dated.groupby("Month").agg(Applications=("_Amount", "size"), Portfolio=("_Amount", "sum")).reset_index()
-        fig = px.area(monthly, x="Month", y="Portfolio", markers=True, color_discrete_sequence=[PINE])
-        fig.update_traces(fillcolor="#dcebcf", line_width=3)
-        fig.update_layout(yaxis_title="Amount (₹)")
-        chart(fig, 310)
-    else:
-        st.info("No valid application dates found for monthly trends.")
+            chart(ranked_bar(by_status, "_Status", "Portfolio"), "portfolio-by-status", height=260)
+
     x, y = st.columns(2)
-    for col, key, title, color in [(x, "_LoanType", "Loan Types", PINE), (y, "_Bank", "Top Banks", "#69893b")]:
-        with col:
-            st.markdown(f"#### {title}")
-            s = summary(data, key).head(8).sort_values("Applications")
-            if not s.empty:
-                fig = px.bar(s, x="Applications", y=key, orientation="h", color_discrete_sequence=[color])
-                fig.update_layout(yaxis_title="")
-                chart(fig)
-            else:
+    for col, dimension, title, name in (
+        (x, "_LoanType", "Loan types", "top-loan-types"),
+        (y, "_Bank", "Top banks", "top-banks"),
+    ):
+        with col, panel(name):
+            st.subheader(title)
+            rows = summary(data, dimension).head(8)
+            if rows.empty:
                 st.info("No data to display.")
+            else:
+                chart(ranked_bar(rows, dimension), name)
 elif page in ["Loan Types", "Banks", "Executives"]:
-    key = {"Loan Types": "_LoanType", "Banks": "_Bank", "Executives": "_Executive"}[page]
-    s = summary(data, key)
-    if not s.empty:
-        fig = px.bar(s.head(20).sort_values("Applications"), x="Applications", y=key, orientation="h", color_discrete_sequence=[PINE])
-        fig.update_layout(yaxis_title="")
-        chart(fig, 450)
-    st.dataframe(s.rename(columns={key: page[:-1] if page.endswith("s") else page}), use_container_width=True, hide_index=True)
+    dimension, label = {"Loan Types": ("_LoanType", "Loan type"), "Banks": ("_Bank", "Bank"), "Executives": ("_Executive", "Executive")}[page]
+    rows = summary(data, dimension)
+    if not rows.empty:
+        with panel("breakdown-chart"):
+            st.subheader(f"Applications by {label.lower()}")
+            chart(ranked_bar(rows.head(20), dimension), "application-breakdown", height=370)
+    with panel("breakdown-table"):
+        st.subheader(f"{label} totals")
+        st.dataframe(rows.rename(columns={dimension: label}), use_container_width=True, hide_index=True)
 elif page == "Records":
-    search = st.text_input("Search records", placeholder="Search any column")
-    display = data.drop(columns=[c for c in data.columns if c.startswith("_")], errors="ignore")
-    if search:
-        mask = display.astype(str).apply(lambda col: col.str.contains(search, case=False, regex=False, na=False)).any(axis=1)
-        display = display[mask]
-    st.caption(f"{len(display):,} matching records")
-    st.dataframe(display, use_container_width=True, hide_index=True)
-    st.download_button("Download CSV", display.to_csv(index=False).encode("utf-8-sig"), file_name="loan_records.csv", mime="text/csv")
+    with panel("records"):
+        search = st.text_input("Search records", placeholder="Search any column")
+        display = data.drop(columns=[c for c in data.columns if c.startswith("_")], errors="ignore")
+        if search:
+            mask = display.astype(str).apply(lambda col: col.str.contains(search, case=False, regex=False, na=False)).any(axis=1)
+            display = display[mask]
+        st.caption(f"{len(display):,} matching records")
+        st.dataframe(display, use_container_width=True, hide_index=True)
+        st.download_button("Download CSV", display.to_csv(index=False).encode("utf-8-sig"), file_name="loan_records.csv", mime="text/csv")
 elif page == "KPI Metrics":
     total = len(data)
     a, b, c = st.columns(3)
     a.metric("Disbursement Rate", f"{100*disbursed.sum()/total:.1f}%" if total else "0.0%")
     b.metric("Average Loan Amount", money(data["_Amount"].mean()) if total else money(0))
     c.metric("Total Portfolio", money(data["_Amount"].sum()))
-    st.dataframe(pd.DataFrame({"Metric": ["Total Applications", "Disbursed", "Pending"], "Count": [total, int(disbursed.sum()), int(pending.sum())]}), hide_index=True, use_container_width=True)
+    with panel("kpi-table"):
+        st.subheader("Application totals")
+        st.dataframe(pd.DataFrame({"Metric": ["Total Applications", "Disbursed", "Pending"], "Count": [total, int(disbursed.sum()), int(pending.sum())]}), hide_index=True, use_container_width=True)
