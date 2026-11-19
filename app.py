@@ -168,6 +168,16 @@ st.html(
     }
     .stApp .st-key-status_focus { max-width: 14rem; margin-inline: auto; }
     .stApp .st-key-status_focus [data-baseweb="select"] > div { border-radius: 999px; }
+    .loan-type-message {
+        padding: 1rem;
+        border: 1px dashed var(--line);
+        border-radius: 10px;
+        background: var(--ground);
+        color: var(--muted);
+        font-size: .9rem;
+        line-height: 1.5;
+    }
+    .loan-type-message strong { display: block; margin-bottom: .35rem; color: var(--text); }
     @media (max-width: 640px) {
         .stApp .block-container { padding-top: 3.65rem; }
         .portfolio-header { border-radius: 14px; }
@@ -302,6 +312,55 @@ def ranked_bar(rows, dimension, measure="Applications"):
     else:
         fig.update_xaxes(title="Applications", tickformat=",d")
     return fig
+
+
+def loan_type_chart(data, name, *, limit, height=296):
+    total = len(data)
+    if total == 0:
+        st.info("No applications in this view.")
+        return
+
+    application_count = f"{total:,} {'application' if total == 1 else 'applications'}"
+    loan_types = data["_LoanType"].str.strip()
+    has_loan_type = loan_types.ne("") & loan_types.str.casefold().ne("not specified")
+    classified = int(has_loan_type.sum())
+    if classified == 0:
+        if st.session_state.found.get("LoanType") is None:
+            guidance = "The worksheet has no recognized loan-type column. Add a Loan Type, Product Type, or Loan Category column."
+        else:
+            guidance = "The loan-type column has no usable values for these applications. Fill in the loan types in the worksheet."
+        st.html(
+            f"""
+            <div class="loan-type-message" role="status">
+                <strong>No loan types to compare</strong>
+                {application_count} without a loan type. {guidance}
+            </div>
+            """
+        )
+        return
+
+    missing = total - classified
+    caption = f"Shares are based on all {application_count} in this view."
+    if missing:
+        caption += f" {missing:,} without a loan type."
+    st.caption(caption)
+
+    rows = summary(data.loc[has_loan_type], "_LoanType").head(limit)
+    fig = ranked_bar(rows, "_LoanType")
+    counts = fig.data[0].x
+    fig.update_traces(
+        text=[f"{count:,} · {count / total:.1%}" for count in counts],
+        textposition="auto",
+        textangle=0,
+        textfont=dict(size=12),
+        insidetextfont=dict(color=GROUND),
+        outsidetextfont=dict(color=TEXT),
+        cliponaxis=False,
+        width=.42 if len(rows) == 1 else None,
+        hovertemplate="<b>%{y}</b><br>%{text} of all applications<br>Portfolio %{customdata[0]}<extra></extra>",
+    )
+    fig.update_xaxes(range=[0, max(counts) * 1.28])
+    chart(fig, name, height=min(height, 100 + 49 * len(rows)))
 
 
 def monthly_trend(data):
@@ -506,22 +565,25 @@ if page == "Overview":
         else:
             chart(ranked_bar(by_status, "_Status", "Portfolio"), "portfolio-by-status", height=260)
 
-    x, y = st.columns(2)
-    for col, dimension, title, name in (
-        (x, "_LoanType", "Loan types", "top-loan-types"),
-        (y, "_Bank", "Top banks", "top-banks"),
-    ):
-        with col, panel(name):
-            st.subheader(title)
-            rows = summary(data, dimension).head(8)
-            if rows.empty:
-                st.info("No data to display.")
-            else:
-                chart(ranked_bar(rows, dimension), name)
+    loan_types_panel, banks_panel = st.columns(2)
+    with loan_types_panel, panel("top-loan-types"):
+        st.subheader("Loan types")
+        loan_type_chart(data, "top-loan-types", limit=8)
+    with banks_panel, panel("top-banks"):
+        st.subheader("Top banks")
+        rows = summary(data, "_Bank").head(8)
+        if rows.empty:
+            st.info("No data to display.")
+        else:
+            chart(ranked_bar(rows, "_Bank"), "top-banks")
 elif page in ["Loan Types", "Banks", "Executives"]:
     dimension, label = {"Loan Types": ("_LoanType", "Loan type"), "Banks": ("_Bank", "Bank"), "Executives": ("_Executive", "Executive")}[page]
     rows = summary(data, dimension)
-    if not rows.empty:
+    if page == "Loan Types":
+        with panel("breakdown-chart"):
+            st.subheader("Applications by loan type")
+            loan_type_chart(data, "application-breakdown", limit=20, height=370)
+    elif not rows.empty:
         with panel("breakdown-chart"):
             st.subheader(f"Applications by {label.lower()}")
             chart(ranked_bar(rows.head(20), dimension), "application-breakdown", height=370)
