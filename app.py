@@ -5,6 +5,29 @@ from random import Random
 import pandas as pd
 import plotly.express as px
 import streamlit as st
+from streamlit import config
+
+GROUND = "#0d2018"
+PANEL = "#142a20"
+TEXT = "#f2f7eb"
+MUTED = "#adc4af"
+LINE = "#345442"
+ACCENT = "#dbf894"
+STATUS_COLORS = {"Disbursed": "#80bc82", "Pending": ACCENT, "Other": "#507667"}
+PALETTE = ["#7eaeac", "#d0ae76", "#ada2cf", "#8baac8", "#cc9b8e"]
+
+# Set the native widget palette in memory so the app ships in two files.
+THEME = {
+    "theme.base": "dark",
+    "theme.primaryColor": ACCENT,
+    "theme.backgroundColor": GROUND,
+    "theme.secondaryBackgroundColor": PANEL,
+    "theme.textColor": TEXT,
+}
+if any(st.get_option(key) != value for key, value in THEME.items()):
+    for key, value in THEME.items():
+        config.set_option(key, value)
+    st.rerun()
 
 st.set_page_config(
     page_title="Loan Portfolio Dashboard",
@@ -13,13 +36,6 @@ st.set_page_config(
     initial_sidebar_state="auto",
 )
 
-PINE = "#28674c"
-INK = "#172820"
-MUTED = "#506356"
-LINE = "#dce5d8"
-PAPER = "#fcfdf9"
-STATUS_COLORS = {"Disbursed": PINE, "Pending": "#a5c75f", "Other": "#ccd9c8"}
-PALETTE = ["#6f9144", "#4f8183", "#bd8446", "#8a6c92", "#637c9b"]
 PAGE_HEADERS = {
     "Upload": ("Loan portfolio", "dashboard", "Upload an Excel workbook to track applications, compare lenders, and see how your portfolio changes over time."),
     "Overview": ("Portfolio", "overview", "Monitor application status, disbursements, and portfolio trends."),
@@ -34,24 +50,31 @@ st.html(
     """
     <style>
     .stApp {
-        --surface: #fcfdf9;
-        --ground: #eff3ec;
-        --text: #172820;
-        --muted: #506356;
-        --line: #dce5d8;
-        --accent: #28674c;
-        --selected: #e5efdf;
-        --shadow: 0 4px 16px #102a1708;
-        background: var(--ground);
+        --surface: #142a20;
+        --ground: #0d2018;
+        --text: #f2f7eb;
+        --muted: #adc4af;
+        --line: #345442;
+        --accent: #dbf894;
+        --selected: #284733;
+        color-scheme: dark;
+        background:
+            linear-gradient(96deg, #10241b 6%, #10241bea 28%, #10241b00 88%),
+            radial-gradient(circle, #d4ed9e36 1px, transparent 1.6px) 0 0 / 14px 14px,
+            radial-gradient(ellipse at 99% -5%, #365834, transparent 68%),
+            linear-gradient(150deg, #12291d, #0a1a14 80%);
         color: var(--text);
     }
-    .stApp [data-testid="stHeader"] { background: var(--ground); color: var(--text); }
+    .stApp :is([data-testid="stAppViewContainer"], [data-testid="stMain"]) { background: transparent; }
+    .stApp [data-testid="stHeader"] { background: #0e2219eb; color: var(--text); }
+    .stApp [data-testid="stHeader"] button { color: var(--muted); }
+    .stApp [data-testid="stHeader"] button:hover { color: var(--accent); }
     .stApp .block-container {
         max-width: 1360px;
         padding: 3.85rem clamp(1rem, 3.2vw, 2.75rem) 2rem;
     }
     [data-testid="stSidebar"] {
-        background: var(--surface);
+        background: linear-gradient(160deg, #192e21, #0d2018 78%);
         color: var(--text);
         border-right: 1px solid var(--line);
     }
@@ -72,9 +95,10 @@ st.html(
         justify-content: space-between;
         gap: .7rem 1rem;
         padding: 1.4rem clamp(1.1rem, 3vw, 2rem) 1.55rem;
+        border: 1px solid #57744976;
         border-radius: 18px;
         background: radial-gradient(ellipse at 101% 0%, #32532f, transparent 67%), #0d2018;
-        color: #f6f8ee;
+        color: var(--text);
     }
     .portfolio-header::after {
         position: absolute;
@@ -88,13 +112,13 @@ st.html(
     .portfolio-header h1 {
         margin: 0 0 .45rem;
         padding: 0;
-        color: #f6f8ee;
+        color: var(--text);
         font-size: clamp(1.85rem, 3.6vw, 3.05rem);
         line-height: 1.05;
         font-weight: 750;
         letter-spacing: -.038em;
     }
-    .portfolio-header .heading-accent { color: #dbf894; }
+    .portfolio-header .heading-accent { color: var(--accent); }
     .portfolio-header p { max-width: 42rem; margin: 0; color: #d8e5d6; font-size: .95rem; }
     .sample-label {
         padding: .2rem .65rem;
@@ -106,34 +130,34 @@ st.html(
         white-space: nowrap;
     }
     [data-testid="stMetric"], [class*="st-key-portfolio-panel-"] {
-        background: var(--surface);
+        background: linear-gradient(151deg, #1b3427, var(--surface) 64%);
         border-color: var(--line);
         border-radius: 16px;
-        box-shadow: var(--shadow);
+        box-shadow: 0 9px 24px #06130e45;
     }
     [data-testid="stMetric"] { height: 100%; padding: .78rem 1rem; border: 1px solid var(--line); }
     .stApp [data-testid="stMetricLabel"] p { color: var(--muted); }
-    .stApp [data-testid="stMetricValue"] { color: var(--text); font-weight: 680; }
-    [data-testid="stFileUploaderDropzone"] { background: var(--selected); border: 1px dashed #9db39f; }
+    .stApp [data-testid="stMetricValue"] { color: var(--accent); font-weight: 680; }
+    [data-testid="stFileUploaderDropzone"] { background: var(--ground); border: 1px dashed #5c8466; }
     .stApp [data-testid="stWidgetLabel"] p, .stApp [data-testid="stFileUploaderDropzone"] { color: var(--text); }
     .stApp :is([data-baseweb="input"], [data-baseweb="base-input"], [data-baseweb="select"] > div) {
-        background: var(--surface);
+        background: var(--ground);
         color: var(--text);
         border-color: var(--line);
     }
     .stApp :is([data-baseweb="input"], [data-baseweb="select"] > div):focus-within { border-color: var(--accent); }
-    .stApp button[data-testid="stBaseButton-primary"] { background: var(--accent); border-color: var(--accent); color: #fff; }
-    .stApp button[data-testid="stBaseButton-primary"]:hover { background: #1a4f38; border-color: #1a4f38; }
+    .stApp button[data-testid="stBaseButton-primary"] { background: var(--accent); border-color: var(--accent); color: var(--ground); }
+    .stApp button[data-testid="stBaseButton-primary"]:hover { background: #e9ffb3; border-color: #e9ffb3; }
     .stApp button[data-testid="stBaseButton-secondary"] { background: var(--surface); border-color: var(--line); color: var(--text); }
     .stApp button[data-testid="stBaseButton-secondary"]:hover { background: var(--selected); border-color: var(--accent); color: var(--accent); }
-    .stApp button:focus-visible { outline: 2px solid #558553; outline-offset: 2px; }
+    .stApp button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
     .st-key-portfolio_navigation [role="radiogroup"] { gap: .15rem; }
     .st-key-portfolio_navigation [role="radiogroup"] label { margin: 0; padding: .32rem .5rem; border-radius: 8px; }
     .st-key-portfolio_navigation [role="radiogroup"] label:hover,
     .stApp [role="radiogroup"] label:has(input:checked) { background: var(--selected); }
     .stApp [role="radiogroup"] label:has(input:checked) > div:first-child { background: var(--accent); border-color: var(--accent); }
-    .stApp [role="radiogroup"] label:has(input:checked) p { color: #1e5a40; font-weight: 650; }
+    .stApp [role="radiogroup"] label:has(input:checked) p { color: var(--accent); font-weight: 650; }
     .st-key-trend_measure [role="radiogroup"] { gap: .4rem; }
     .st-key-trend_measure [role="radiogroup"] label {
         margin: 0;
@@ -145,7 +169,7 @@ st.html(
         padding-inline: 4px;
         border: 1px solid var(--line);
         border-radius: 7px;
-        background: #edf3e9;
+        background: var(--ground);
     }
     [data-testid="stPlotlyChart"] .modebar-btn:hover { background: var(--selected); }
 
@@ -240,18 +264,18 @@ def panel(name):
 
 def chart(fig, name, height=296):
     fig.update_layout(
-        template="plotly_white",
+        template="plotly_dark",
         height=height,
         margin=dict(l=12, r=18, t=37, b=22),
-        paper_bgcolor=PAPER,
-        plot_bgcolor=PAPER,
-        font=dict(color=INK, size=13),
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="rgba(0,0,0,0)",
+        font=dict(color=TEXT, size=13),
         legend=dict(orientation="h", x=0.5, xanchor="center", y=-0.08, yanchor="top"),
-        hoverlabel=dict(bgcolor="#122c21", bordercolor=PINE, font_color="#f6f8ee"),
-        modebar=dict(color=MUTED, activecolor=PINE),
+        hoverlabel=dict(bgcolor=GROUND, bordercolor=ACCENT, font_color=TEXT),
+        modebar=dict(color=MUTED, activecolor=ACCENT),
     )
-    fig.update_xaxes(gridcolor=LINE, tickfont=dict(color=MUTED), automargin=True)
-    fig.update_yaxes(gridcolor=LINE, tickfont=dict(color=MUTED), automargin=True)
+    fig.update_xaxes(gridcolor=LINE, zerolinecolor=LINE, tickfont=dict(color=MUTED), automargin=True)
+    fig.update_yaxes(gridcolor=LINE, zerolinecolor=LINE, tickfont=dict(color=MUTED), automargin=True)
     st.plotly_chart(
         fig,
         key=name,
@@ -276,7 +300,7 @@ def ranked_bar(rows, dimension, measure="Applications"):
         x=measure,
         y=dimension,
         orientation="h",
-        color_discrete_sequence=[PINE],
+        color_discrete_sequence=["#80bc82"],
         custom_data=["Amount", "Applications"],
     )
     fig.update_traces(
@@ -316,9 +340,9 @@ def monthly_trend(data):
 
     fig = px.area(monthly, x="Month", y=column, markers=True, custom_data=["Hover value"])
     fig.update_traces(
-        fillcolor="#dcebcf",
-        line=dict(color=PINE, width=3),
-        marker=dict(size=8, color=PINE, line=dict(color=PAPER, width=1.5)),
+        fillcolor="rgba(219,248,148,0.15)",
+        line=dict(color=ACCENT, width=3),
+        marker=dict(size=8, color=ACCENT, line=dict(color=PANEL, width=1.5)),
         hovertemplate="<b>%{x|%b %Y}</b><br>%{customdata[0]}<extra></extra>",
     )
     fig.update_layout(hovermode="x")
@@ -353,7 +377,7 @@ def status_chart(data):
     )
     fig.update_traces(
         textinfo="none",
-        marker=dict(line=dict(color=PAPER, width=2)),
+        marker=dict(line=dict(color=PANEL, width=2)),
         hovertemplate="<b>%{label}</b><br>%{value:,} applications<br>%{percent} of total<extra></extra>",
     )
     fig.add_annotation(
