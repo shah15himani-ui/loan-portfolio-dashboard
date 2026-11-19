@@ -165,14 +165,6 @@ st.html(
         border: 1px solid var(--line);
         border-radius: 8px;
     }
-    [data-testid="stPlotlyChart"] .modebar {
-        padding-inline: 4px;
-        border: 1px solid var(--line);
-        border-radius: 7px;
-        background: var(--ground);
-    }
-    [data-testid="stPlotlyChart"] .modebar-btn:hover { background: var(--selected); }
-
     @media (max-width: 640px) {
         .stApp .block-container { padding-top: 3.65rem; }
         .portfolio-header { border-radius: 14px; }
@@ -266,13 +258,12 @@ def chart(fig, name, height=296):
     fig.update_layout(
         template="plotly_dark",
         height=height,
-        margin=dict(l=12, r=18, t=37, b=22),
+        margin=dict(l=12, r=18, t=18, b=22),
         paper_bgcolor="rgba(0,0,0,0)",
         plot_bgcolor="rgba(0,0,0,0)",
         font=dict(color=TEXT, size=13),
         legend=dict(orientation="h", x=0.5, xanchor="center", y=-0.08, yanchor="top"),
         hoverlabel=dict(bgcolor=GROUND, bordercolor=ACCENT, font_color=TEXT),
-        modebar=dict(color=MUTED, activecolor=ACCENT),
     )
     fig.update_xaxes(gridcolor=LINE, zerolinecolor=LINE, tickfont=dict(color=MUTED), automargin=True)
     fig.update_yaxes(gridcolor=LINE, zerolinecolor=LINE, tickfont=dict(color=MUTED), automargin=True)
@@ -281,12 +272,7 @@ def chart(fig, name, height=296):
         key=name,
         use_container_width=True,
         theme=None,
-        config={
-            "displayModeBar": True,
-            "displaylogo": False,
-            "modeBarButtonsToRemove": ["select2d", "lasso2d", "zoomIn2d", "zoomOut2d", "autoScale2d"],
-            "toImageButtonOptions": {"filename": name, "scale": 2},
-        },
+        config={"displayModeBar": False},
     )
 
 def summary(data, key):
