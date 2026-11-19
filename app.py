@@ -1,5 +1,6 @@
 import io
 import re
+from html import escape
 from random import Random
 
 import pandas as pd
@@ -13,8 +14,8 @@ TEXT = "#f2f7eb"
 MUTED = "#adc4af"
 LINE = "#345442"
 ACCENT = "#dbf894"
-STATUS_COLORS = {"Disbursed": "#80bc82", "Pending": ACCENT, "Other": "#507667"}
-PALETTE = ["#7eaeac", "#d0ae76", "#ada2cf", "#8baac8", "#cc9b8e"]
+STATUS_HIGHLIGHT = "#b8e39e"
+STATUS_RING_COLORS = ("#53665f", "#edbe8a", "#acd5ea", "#bba8d7", "#79a595")
 
 # Set the native widget palette in memory so the app ships in two files.
 THEME = {
@@ -165,6 +166,8 @@ st.html(
         border: 1px solid var(--line);
         border-radius: 8px;
     }
+    .stApp .st-key-status_focus { max-width: 14rem; margin-inline: auto; }
+    .stApp .st-key-status_focus [data-baseweb="select"] > div { border-radius: 999px; }
     @media (max-width: 640px) {
         .stApp .block-container { padding-top: 3.65rem; }
         .portfolio-header { border-radius: 14px; }
@@ -347,33 +350,54 @@ def monthly_trend(data):
 
 def status_chart(data):
     st.subheader("Application status")
-    counts = data["_Status"].value_counts().rename_axis("Status").reset_index(name="Count")
+    counts = data["_Status"].replace("", "Not specified").value_counts()
     if counts.empty:
         st.info("No records in this date range.")
         return
 
-    fig = px.pie(
-        counts,
-        names="Status",
-        values="Count",
-        color="Status",
-        hole=.69,
-        color_discrete_map=STATUS_COLORS,
-        color_discrete_sequence=PALETTE,
+    statuses = counts.index.tolist()
+    if st.session_state.get("status_focus") not in statuses:
+        st.session_state.status_focus = statuses[0]
+    selected = st.selectbox(
+        "Status to highlight",
+        statuses,
+        key="status_focus",
+        label_visibility="collapsed",
     )
+    colors = [
+        STATUS_HIGHLIGHT if status == selected else STATUS_RING_COLORS[index % len(STATUS_RING_COLORS)]
+        for index, status in enumerate(statuses)
+    ]
+    fig = px.pie(names=statuses, values=counts.tolist(), hole=.84)
     fig.update_traces(
+        sort=False,
+        rotation=16,
+        direction="clockwise",
         textinfo="none",
-        marker=dict(line=dict(color=PANEL, width=2)),
+        marker=dict(colors=colors, line=dict(color=PANEL, width=4 if len(statuses) > 1 else 0)),
         hovertemplate="<b>%{label}</b><br>%{value:,} applications<br>%{percent} of total<extra></extra>",
     )
+    fig.update_layout(showlegend=False)
+
+    percentage = f"{100 * counts[selected] / counts.sum():.1f}".removesuffix(".0")
+    center_label = selected if len(selected) <= 21 else f"{selected[:20].rstrip()}…"
     fig.add_annotation(
-        text=f"<b>{len(data):,}</b><br>Applications",
+        text=f"<b>{percentage}%</b>",
         x=.5,
         y=.5,
+        yshift=9,
         showarrow=False,
-        font=dict(size=15),
+        font=dict(size=32, color=TEXT),
     )
-    chart(fig, "application-status", height=314)
+    fig.add_annotation(
+        text=escape(center_label),
+        x=.5,
+        y=.5,
+        yshift=-20,
+        showarrow=False,
+        font=dict(size=13, color=MUTED),
+    )
+    chart(fig, "application-status", height=250)
 
 
 def open_portfolio(raw, *, demo=False):
