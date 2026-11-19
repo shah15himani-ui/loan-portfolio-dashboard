@@ -314,7 +314,56 @@ def ranked_bar(rows, dimension, measure="Applications"):
     return fig
 
 
-def loan_type_chart(data, name, *, limit, height=296):
+def label_application_bars(fig, total, share_of):
+    counts = fig.data[0].x
+    fig.update_traces(
+        text=[f"{count:,} · {count / total:.1%}" for count in counts],
+        textposition="auto",
+        textangle=0,
+        textfont=dict(size=12),
+        insidetextfont=dict(color=GROUND),
+        outsidetextfont=dict(color=TEXT),
+        cliponaxis=False,
+        width=.42 if len(counts) == 1 else None,
+        hovertemplate=(
+            "<b>%{y}</b><br>%{text} " + share_of
+            + "<br>Portfolio %{customdata[0]}<extra></extra>"
+        ),
+    )
+    largest_count = max(counts)
+    fig.update_xaxes(range=[0, largest_count * 1.28], dtick=1 if largest_count <= 7 else None)
+
+
+def loan_amount_chart(data):
+    amounts = data["_Amount"]
+    valid = data.loc[amounts.gt(0) & amounts.lt(float("inf"))]
+    if valid.empty:
+        st.info("This view has no recorded positive loan amounts to compare.")
+        return
+
+    bands = ["Under ₹5L", "₹5L to under ₹10L", "₹10L to under ₹25L", "₹25L to under ₹50L", "₹50L and up"]
+    amount_band = pd.cut(
+        valid["_Amount"],
+        bins=[0, 500_000, 1_000_000, 2_500_000, 5_000_000, float("inf")],
+        labels=bands,
+        right=False,
+    )
+    rows = (
+        summary(valid.assign(AmountBand=amount_band.astype(str)), "AmountBand")
+        .set_index("AmountBand")
+        .reindex(bands, fill_value=0)
+        .reset_index()
+    )
+    st.caption(f"Shares use the {len(valid):,} of {len(data):,} applications with a positive loan amount.")
+    fig = ranked_bar(rows, "AmountBand")
+    fig.update_yaxes(categoryorder="array", categoryarray=bands[::-1])
+    label_application_bars(fig, len(valid), "of applications with positive amounts")
+    for band in rows.loc[rows["Applications"].eq(0), "AmountBand"]:
+        fig.add_annotation(x=0, y=band, text="0", xanchor="left", xshift=5, showarrow=False, font=dict(color=MUTED))
+    chart(fig, "loan-amount-bands")
+
+
+def loan_type_chart(data):
     total = len(data)
     if total == 0:
         st.info("No applications in this view.")
@@ -345,22 +394,10 @@ def loan_type_chart(data, name, *, limit, height=296):
         caption += f" {missing:,} without a loan type."
     st.caption(caption)
 
-    rows = summary(data.loc[has_loan_type], "_LoanType").head(limit)
+    rows = summary(data.loc[has_loan_type], "_LoanType").head(20)
     fig = ranked_bar(rows, "_LoanType")
-    counts = fig.data[0].x
-    fig.update_traces(
-        text=[f"{count:,} · {count / total:.1%}" for count in counts],
-        textposition="auto",
-        textangle=0,
-        textfont=dict(size=12),
-        insidetextfont=dict(color=GROUND),
-        outsidetextfont=dict(color=TEXT),
-        cliponaxis=False,
-        width=.42 if len(rows) == 1 else None,
-        hovertemplate="<b>%{y}</b><br>%{text} of all applications<br>Portfolio %{customdata[0]}<extra></extra>",
-    )
-    fig.update_xaxes(range=[0, max(counts) * 1.28])
-    chart(fig, name, height=min(height, 100 + 49 * len(rows)))
+    label_application_bars(fig, total, "of all applications")
+    chart(fig, "application-breakdown", height=min(370, 100 + 49 * len(rows)))
 
 
 def monthly_trend(data):
@@ -565,10 +602,10 @@ if page == "Overview":
         else:
             chart(ranked_bar(by_status, "_Status", "Portfolio"), "portfolio-by-status", height=260)
 
-    loan_types_panel, banks_panel = st.columns(2)
-    with loan_types_panel, panel("top-loan-types"):
-        st.subheader("Loan types")
-        loan_type_chart(data, "top-loan-types", limit=8)
+    loan_amount_panel, banks_panel = st.columns(2)
+    with loan_amount_panel, panel("loan-amount-bands"):
+        st.subheader("Loan amount bands")
+        loan_amount_chart(data)
     with banks_panel, panel("top-banks"):
         st.subheader("Top banks")
         rows = summary(data, "_Bank").head(8)
@@ -582,7 +619,7 @@ elif page in ["Loan Types", "Banks", "Executives"]:
     if page == "Loan Types":
         with panel("breakdown-chart"):
             st.subheader("Applications by loan type")
-            loan_type_chart(data, "application-breakdown", limit=20, height=370)
+            loan_type_chart(data)
     elif not rows.empty:
         with panel("breakdown-chart"):
             st.subheader(f"Applications by {label.lower()}")
