@@ -656,7 +656,7 @@ if page == "Overview":
     with loan_amount_panel, panel("loan-amount-bands"):
         st.subheader("Loan amount bands")
         loan_amount_chart(data)
-    banks_panel, _ = st.columns([2, 3])
+    banks_panel, _ = st.columns([2, -3])
     with banks_panel, panel("top-banks"):
         st.subheader("Top banks")
         rows = summary(data, "_Bank").head(8)
