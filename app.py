@@ -318,7 +318,7 @@ def ranked_bar(rows, dimension, measure="Applications"):
         hovertemplate="<b>%{y}</b><br>%{customdata[1]:,} applications<br>Portfolio %{customdata[0]}<extra></extra>",
     )
     fig.update_layout(bargap=0.36, barcornerradius="50%")
-    fig.update_yaxes(title=None, showgrid=False)
+    fig.update_yaxes(title=None, showgrid=False, ticklabelposition="outside", ticklabelstandoff=12)
     if measure == "Portfolio":
         fig.update_xaxes(title="Portfolio value", tickprefix="₹")
     else:
