@@ -290,7 +290,7 @@ def panel(name):
 
 
 def chart(fig, name, *, height=CHART_HEIGHT, top_margin=18):
-def chart(fig, name=None, *, height=CHART_HEIGHT, top_margin=18):
+def render_chart(fig, *, height=CHART_HEIGHT, top_margin=18):
     fig.update_layout(
         template="plotly_dark",
         height=height,
@@ -384,6 +384,7 @@ def loan_amount_chart(data):
     for band in rows.loc[rows["Applications"].eq(0), "AmountBand"]:
         fig.add_annotation(x=0, y=band, text="0", xanchor="left", xshift=5, showarrow=False, font=dict(color=MUTED))
     chart(fig, "loan-amount-bands")
+    render_chart(fig)
 
 
 def loan_type_chart(data):
@@ -421,6 +422,7 @@ def loan_type_chart(data):
     fig = ranked_bar(rows, "_LoanType")
     label_application_bars(fig, total, "of all applications")
     chart(fig, "application-breakdown")
+    render_chart(fig)
 
 
 def monthly_trend(data):
@@ -496,6 +498,7 @@ def monthly_trend(data):
     )
     fig.update_yaxes(title=None, showgrid=True, rangemode="tozero", **tick_options)
     chart(fig, "monthly-portfolio-trend")
+    render_chart(fig)
 
 
 def status_chart(data):
@@ -548,6 +551,7 @@ def status_chart(data):
         font=dict(size=13, color=MUTED),
     )
     chart(fig, "application-status")
+    render_chart(fig)
 
 
 def open_portfolio(raw, *, demo=False):
@@ -660,6 +664,7 @@ if page == "Overview":
             st.info("No records in this date range.")
         else:
             chart(ranked_bar(by_status, "_Status", "Portfolio"), "portfolio-by-status")
+            render_chart(ranked_bar(by_status, "_Status", "Portfolio"))
 
     with loan_amount_panel, panel("loan-amount-bands"):
         st.subheader("Loan amount bands")
@@ -686,7 +691,7 @@ if page == "Overview":
                     font=dict(size=16),
                 ),
             )
-            chart(fig, height=270, top_margin=38)
+            render_chart(fig, height=270, top_margin=38)
 elif page in ["Loan Types", "Banks", "Executives"]:
     dimension, label = {"Loan Types": ("_LoanType", "Loan type"), "Banks": ("_Bank", "Bank"), "Executives": ("_Executive", "Executive")}[page]
     rows = summary(data, dimension)
@@ -699,6 +704,7 @@ elif page in ["Loan Types", "Banks", "Executives"]:
             st.info("No data to display.")
         else:
             chart(ranked_bar(rows.head(20), dimension), "application-breakdown")
+            render_chart(ranked_bar(rows.head(20), dimension))
     with totals_column, panel("breakdown-table"):
         st.subheader(f"{label} totals")
         st.dataframe(rows.rename(columns={dimension: label}), use_container_width=True, hide_index=True)
