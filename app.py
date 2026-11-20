@@ -287,10 +287,10 @@ def panel(name):
     return st.container(border=True, key=f"portfolio-panel-{name}")
 
 
-def chart(fig, name):
+def chart(fig, name, *, height=CHART_HEIGHT):
     fig.update_layout(
         template="plotly_dark",
-        height=CHART_HEIGHT,
+        height=height,
         margin=dict(l=12, r=18, t=18, b=22),
         paper_bgcolor="rgba(0,0,0,0)",
         plot_bgcolor="rgba(0,0,0,0)",
@@ -656,14 +656,14 @@ if page == "Overview":
     with loan_amount_panel, panel("loan-amount-bands"):
         st.subheader("Loan amount bands")
         loan_amount_chart(data)
-    banks_panel, _ = st.columns(2)
+    banks_panel, _ = st.columns([2, 1])
     with banks_panel, panel("top-banks"):
         st.subheader("Top banks")
         rows = summary(data, "_Bank").head(8)
         if rows.empty:
             st.info("No data to display.")
         else:
-            chart(ranked_bar(rows, "_Bank"), "top-banks")
+            chart(ranked_bar(rows, "_Bank"), "top-banks", height=270)
 elif page in ["Loan Types", "Banks", "Executives"]:
     dimension, label = {"Loan Types": ("_LoanType", "Loan type"), "Banks": ("_Bank", "Bank"), "Executives": ("_Executive", "Executive")}[page]
     rows = summary(data, dimension)
