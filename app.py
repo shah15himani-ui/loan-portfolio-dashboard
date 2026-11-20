@@ -18,6 +18,7 @@ CHART_SURFACE = "#101c16"
 CHART_GRID = "#293a32"
 CHART_SAGE = "#b8cbbd"
 CHART_MUTED_SAGE = "#819689"
+CHART_HEIGHT = 320
 STATUS_RING_COLORS = ("#52665a", "#677e72", CHART_MUTED_SAGE, "#4a655b", "#75897c")
 
 # Set the native widget palette in memory so the app ships in two files.
@@ -174,6 +175,12 @@ st.html(
         border: 1px solid #23352b;
         border-radius: 10px;
     }
+    .stApp [class*="st-key-portfolio-panel-"]:has(> [data-testid="stElementContainer"] [data-testid="stPlotlyChart"]) {
+        min-height: 29rem;
+    }
+    .stApp [class*="st-key-portfolio-panel-"] > [data-testid="stElementContainer"]:has([data-testid="stPlotlyChart"]) {
+        margin-top: auto;
+    }
     .stApp .st-key-status_focus { max-width: 14rem; margin-inline: auto; }
     .stApp .st-key-status_focus [data-baseweb="select"] > div {
         background: #101c16;
@@ -280,10 +287,10 @@ def panel(name):
     return st.container(border=True, key=f"portfolio-panel-{name}")
 
 
-def chart(fig, name, height=296):
+def chart(fig, name):
     fig.update_layout(
         template="plotly_dark",
-        height=height,
+        height=CHART_HEIGHT,
         margin=dict(l=12, r=18, t=18, b=22),
         paper_bgcolor="rgba(0,0,0,0)",
         plot_bgcolor="rgba(0,0,0,0)",
@@ -409,7 +416,7 @@ def loan_type_chart(data):
     rows = summary(data.loc[has_loan_type], "_LoanType").head(20)
     fig = ranked_bar(rows, "_LoanType")
     label_application_bars(fig, total, "of all applications")
-    chart(fig, "application-breakdown", height=min(370, 100 + 49 * len(rows)))
+    chart(fig, "application-breakdown")
 
 
 def monthly_trend(data):
@@ -484,7 +491,7 @@ def monthly_trend(data):
         dtick="M1" if not has_comparison else None,
     )
     fig.update_yaxes(title=None, showgrid=True, rangemode="tozero", **tick_options)
-    chart(fig, "monthly-portfolio-trend", height=258)
+    chart(fig, "monthly-portfolio-trend")
 
 
 def status_chart(data):
@@ -536,7 +543,7 @@ def status_chart(data):
         showarrow=False,
         font=dict(size=13, color=MUTED),
     )
-    chart(fig, "application-status", height=250)
+    chart(fig, "application-status")
 
 
 def open_portfolio(raw, *, demo=False):
@@ -631,24 +638,25 @@ if page == "Overview":
     b.metric("Portfolio Value", money(data["_Amount"].sum()))
     c.metric("Disbursed", f"{disbursed.sum():,}")
     d.metric("Pending", f"{pending.sum():,}")
-    left, right = st.columns([1.55, 1])
+    left, right = st.columns(2)
     with left, panel("trend"):
         monthly_trend(data)
     with right, panel("status"):
         status_chart(data)
 
-    with panel("portfolio-status"):
+    portfolio_status_panel, loan_amount_panel = st.columns(2)
+    with portfolio_status_panel, panel("portfolio-status"):
         st.subheader("Portfolio value by status")
         by_status = summary(data, "_Status")
         if by_status.empty:
             st.info("No records in this date range.")
         else:
-            chart(ranked_bar(by_status, "_Status", "Portfolio"), "portfolio-by-status", height=260)
+            chart(ranked_bar(by_status, "_Status", "Portfolio"), "portfolio-by-status")
 
-    loan_amount_panel, banks_panel = st.columns(2)
     with loan_amount_panel, panel("loan-amount-bands"):
         st.subheader("Loan amount bands")
         loan_amount_chart(data)
+    banks_panel, _ = st.columns(2)
     with banks_panel, panel("top-banks"):
         st.subheader("Top banks")
         rows = summary(data, "_Bank").head(8)
@@ -659,15 +667,16 @@ if page == "Overview":
 elif page in ["Loan Types", "Banks", "Executives"]:
     dimension, label = {"Loan Types": ("_LoanType", "Loan type"), "Banks": ("_Bank", "Bank"), "Executives": ("_Executive", "Executive")}[page]
     rows = summary(data, dimension)
-    if page == "Loan Types":
-        with panel("breakdown-chart"):
-            st.subheader("Applications by loan type")
+    chart_column, totals_column = st.columns(2)
+    with chart_column, panel("breakdown-chart"):
+        st.subheader(f"Applications by {label.lower()}")
+        if page == "Loan Types":
             loan_type_chart(data)
-    elif not rows.empty:
-        with panel("breakdown-chart"):
-            st.subheader(f"Applications by {label.lower()}")
-            chart(ranked_bar(rows.head(20), dimension), "application-breakdown", height=370)
-    with panel("breakdown-table"):
+        elif rows.empty:
+            st.info("No data to display.")
+        else:
+            chart(ranked_bar(rows.head(20), dimension), "application-breakdown")
+    with totals_column, panel("breakdown-table"):
         st.subheader(f"{label} totals")
         st.dataframe(rows.rename(columns={dimension: label}), use_container_width=True, hide_index=True)
 elif page == "Records":
