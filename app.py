@@ -290,6 +290,7 @@ def panel(name):
 
 
 def chart(fig, name, *, height=CHART_HEIGHT, top_margin=18):
+def chart(fig, name=None, *, height=CHART_HEIGHT, top_margin=18):
     fig.update_layout(
         template="plotly_dark",
         height=height,
@@ -305,6 +306,7 @@ def chart(fig, name, *, height=CHART_HEIGHT, top_margin=18):
         fig,
         key=name,
         use_container_width=True,
+        width="stretch",
         theme=None,
         config={"displayModeBar": False},
     )
@@ -586,8 +588,10 @@ def upload():
                 with pd.ExcelFile(io.BytesIO(file.getvalue())) as workbook:
                     sheet = st.selectbox("Worksheet", workbook.sheet_names)
                     raw = workbook.parse(sheet)
+                    raw = pd.read_excel(workbook, sheet_name=sheet)
                 st.caption(f"{len(raw):,} rows · {len(raw.columns)} columns")
                 if st.button("Open dashboard", type="primary", use_container_width=True):
+                if st.button("Open dashboard", type="primary", width="stretch"):
                     if raw.empty:
                         st.error("The selected worksheet is empty.")
                     else:
@@ -599,6 +603,7 @@ def upload():
         st.subheader("Explore a sample portfolio")
         st.caption("Try the dashboard with 248 fictional loan applications.")
         if st.button("View sample dashboard", use_container_width=True):
+        if st.button("View sample dashboard", width="stretch"):
             open_portfolio(sample_portfolio(), demo=True)
 
 if st.session_state.data is None or st.session_state.page == "Upload":
@@ -610,6 +615,7 @@ pages = ["Overview", "Loan Types", "Banks", "Executives", "Records", "KPI Metric
 page = st.sidebar.radio("Navigation", pages, key="portfolio_navigation")
 st.session_state.page = page
 if st.sidebar.button("Upload new data", use_container_width=True):
+if st.sidebar.button("Upload new data", width="stretch"):
     st.session_state.page = "Upload"
     st.rerun()
 
@@ -680,7 +686,7 @@ if page == "Overview":
                     font=dict(size=16),
                 ),
             )
-            chart(fig, "top-banks", height=270, top_margin=38)
+            chart(fig, height=270, top_margin=38)
 elif page in ["Loan Types", "Banks", "Executives"]:
     dimension, label = {"Loan Types": ("_LoanType", "Loan type"), "Banks": ("_Bank", "Bank"), "Executives": ("_Executive", "Executive")}[page]
     rows = summary(data, dimension)
@@ -696,6 +702,7 @@ elif page in ["Loan Types", "Banks", "Executives"]:
     with totals_column, panel("breakdown-table"):
         st.subheader(f"{label} totals")
         st.dataframe(rows.rename(columns={dimension: label}), use_container_width=True, hide_index=True)
+        st.dataframe(rows.rename(columns={dimension: label}), width="stretch", hide_index=True)
 elif page == "Records":
     with panel("records"):
         search = st.text_input("Search records", placeholder="Search any column")
@@ -705,6 +712,7 @@ elif page == "Records":
             display = display[mask]
         st.caption(f"{len(display):,} matching records")
         st.dataframe(display, use_container_width=True, hide_index=True)
+        st.dataframe(display, width="stretch", hide_index=True)
         st.download_button("Download CSV", display.to_csv(index=False).encode("utf-8-sig"), file_name="loan_records.csv", mime="text/csv")
 elif page == "KPI Metrics":
     total = len(data)
@@ -715,3 +723,4 @@ elif page == "KPI Metrics":
     with panel("kpi-table"):
         st.subheader("Application totals")
         st.dataframe(pd.DataFrame({"Metric": ["Total Applications", "Disbursed", "Pending"], "Count": [total, int(disbursed.sum()), int(pending.sum())]}), hide_index=True, use_container_width=True)
+        st.dataframe(pd.DataFrame({"Metric": ["Total Applications", "Disbursed", "Pending"], "Count": [total, int(disbursed.sum()), int(pending.sum())]}), hide_index=True, width="stretch")
