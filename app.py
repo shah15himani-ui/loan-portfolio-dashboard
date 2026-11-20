@@ -15,8 +15,10 @@ TEXT = "#f2f7eb"
 MUTED = "#adc4af"
 LINE = "#345442"
 ACCENT = "#dbf894"
-STATUS_HIGHLIGHT = "#b8e39e"
-STATUS_RING_COLORS = ("#53665f", "#edbe8a", "#acd5ea", "#bba8d7", "#79a595")
+CHART_SURFACE = "#101c16"
+CHART_SAGE = "#b8cbbd"
+CHART_MUTED_SAGE = "#819689"
+STATUS_RING_COLORS = ("#52665a", "#677e72", CHART_MUTED_SAGE, "#4a655b", "#75897c")
 
 # Set the native widget palette in memory so the app ships in two files.
 THEME = {
@@ -167,13 +169,18 @@ st.html(
         border: 1px solid var(--line);
         border-radius: 8px;
     }
-    .st-key-portfolio-panel-trend [data-testid="stPlotlyChart"] {
+    :is(.st-key-portfolio-panel-trend, .st-key-portfolio-panel-status) [data-testid="stPlotlyChart"] {
         background: #101c16;
         border: 1px solid #23352b;
         border-radius: 10px;
     }
     .stApp .st-key-status_focus { max-width: 14rem; margin-inline: auto; }
-    .stApp .st-key-status_focus [data-baseweb="select"] > div { border-radius: 999px; }
+    .stApp .st-key-status_focus [data-baseweb="select"] > div {
+        background: #101c16;
+        border-color: #34483b;
+        border-radius: 999px;
+    }
+    .stApp .st-key-status_focus [data-baseweb="select"] > div:focus-within { border-color: #819689; }
     .loan-type-message {
         padding: 1rem;
         border: 1px dashed var(--line);
@@ -436,8 +443,8 @@ def monthly_trend(data):
         y=monthly[column],
         name=measure,
         mode="lines" if has_comparison else "markers",
-        line=dict(color="#b8cbbd", width=1.8, shape="spline", smoothing=.75),
-        marker=dict(size=7, color="#b8cbbd"),
+        line=dict(color=CHART_SAGE, width=1.8, shape="spline", smoothing=.75),
+        marker=dict(size=7, color=CHART_SAGE),
         fill="tozeroy" if has_comparison else None,
         fillgradient=dict(
             type="vertical",
@@ -456,7 +463,7 @@ def monthly_trend(data):
             y=average,
             name="3-month average",
             mode="lines",
-            line=dict(color="#819689", width=1.4, dash="dot", shape="spline", smoothing=.75),
+            line=dict(color=CHART_MUTED_SAGE, width=1.4, dash="dot", shape="spline", smoothing=.75),
             customdata=average_hover,
             hovertemplate="3-month average: %{customdata}<extra></extra>",
         )
@@ -497,7 +504,7 @@ def status_chart(data):
         label_visibility="collapsed",
     )
     colors = [
-        STATUS_HIGHLIGHT if status == selected else STATUS_RING_COLORS[index % len(STATUS_RING_COLORS)]
+        CHART_SAGE if status == selected else STATUS_RING_COLORS[index % len(STATUS_RING_COLORS)]
         for index, status in enumerate(statuses)
     ]
     fig = px.pie(names=statuses, values=counts.tolist(), hole=.84)
@@ -506,7 +513,7 @@ def status_chart(data):
         rotation=16,
         direction="clockwise",
         textinfo="none",
-        marker=dict(colors=colors, line=dict(color=PANEL, width=4 if len(statuses) > 1 else 0)),
+        marker=dict(colors=colors, line=dict(color=CHART_SURFACE, width=4 if len(statuses) > 1 else 0)),
         hovertemplate="<b>%{label}</b><br>%{value:,} applications<br>%{percent} of total<extra></extra>",
     )
     fig.update_layout(showlegend=False)
@@ -519,7 +526,7 @@ def status_chart(data):
         y=.5,
         yshift=9,
         showarrow=False,
-        font=dict(size=32, color=TEXT),
+        font=dict(size=32, color=CHART_SAGE),
     )
     fig.add_annotation(
         text=escape(center_label),
