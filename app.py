@@ -181,8 +181,6 @@ st.html(
     .stApp [class*="st-key-portfolio-panel-"]:not(.st-key-portfolio-panel-top-banks) > [data-testid="stElementContainer"]:has([data-testid="stPlotlyChart"]) {
         margin-top: auto;
     }
-    .stApp .st-key-portfolio-panel-top-banks { row-gap: .375rem; }
-    .stApp .st-key-portfolio-panel-top-banks h3 { padding-bottom: 0; }
     .stApp .st-key-status_focus { max-width: 14rem; margin-inline: auto; }
     .stApp .st-key-status_focus [data-baseweb="select"] > div {
         background: #101c16;
@@ -289,7 +287,6 @@ def panel(name):
     return st.container(border=True, key=f"portfolio-panel-{name}")
 
 
-def chart(fig, name, *, height=CHART_HEIGHT, top_margin=18):
 def render_chart(fig, *, height=CHART_HEIGHT, top_margin=18):
     fig.update_layout(
         template="plotly_dark",
@@ -304,8 +301,6 @@ def render_chart(fig, *, height=CHART_HEIGHT, top_margin=18):
     fig.update_yaxes(gridcolor=CHART_GRID, zerolinecolor=CHART_GRID, tickfont=dict(color=MUTED), automargin=True)
     st.plotly_chart(
         fig,
-        key=name,
-        use_container_width=True,
         width="stretch",
         theme=None,
         config={"displayModeBar": False},
@@ -383,7 +378,6 @@ def loan_amount_chart(data):
     label_application_bars(fig, len(valid), "of applications with positive amounts")
     for band in rows.loc[rows["Applications"].eq(0), "AmountBand"]:
         fig.add_annotation(x=0, y=band, text="0", xanchor="left", xshift=5, showarrow=False, font=dict(color=MUTED))
-    chart(fig, "loan-amount-bands")
     render_chart(fig)
 
 
@@ -421,7 +415,6 @@ def loan_type_chart(data):
     rows = summary(data.loc[has_loan_type], "_LoanType").head(20)
     fig = ranked_bar(rows, "_LoanType")
     label_application_bars(fig, total, "of all applications")
-    chart(fig, "application-breakdown")
     render_chart(fig)
 
 
@@ -497,7 +490,6 @@ def monthly_trend(data):
         dtick="M1" if not has_comparison else None,
     )
     fig.update_yaxes(title=None, showgrid=True, rangemode="tozero", **tick_options)
-    chart(fig, "monthly-portfolio-trend")
     render_chart(fig)
 
 
@@ -550,7 +542,6 @@ def status_chart(data):
         showarrow=False,
         font=dict(size=13, color=MUTED),
     )
-    chart(fig, "application-status")
     render_chart(fig)
 
 
@@ -591,10 +582,8 @@ def upload():
             try:
                 with pd.ExcelFile(io.BytesIO(file.getvalue())) as workbook:
                     sheet = st.selectbox("Worksheet", workbook.sheet_names)
-                    raw = workbook.parse(sheet)
                     raw = pd.read_excel(workbook, sheet_name=sheet)
                 st.caption(f"{len(raw):,} rows · {len(raw.columns)} columns")
-                if st.button("Open dashboard", type="primary", use_container_width=True):
                 if st.button("Open dashboard", type="primary", width="stretch"):
                     if raw.empty:
                         st.error("The selected worksheet is empty.")
@@ -606,7 +595,6 @@ def upload():
     with sample_area, panel("sample"):
         st.subheader("Explore a sample portfolio")
         st.caption("Try the dashboard with 248 fictional loan applications.")
-        if st.button("View sample dashboard", use_container_width=True):
         if st.button("View sample dashboard", width="stretch"):
             open_portfolio(sample_portfolio(), demo=True)
 
@@ -618,7 +606,6 @@ st.sidebar.markdown("## Loan portfolio")
 pages = ["Overview", "Loan Types", "Banks", "Executives", "Records", "KPI Metrics"]
 page = st.sidebar.radio("Navigation", pages, key="portfolio_navigation")
 st.session_state.page = page
-if st.sidebar.button("Upload new data", use_container_width=True):
 if st.sidebar.button("Upload new data", width="stretch"):
     st.session_state.page = "Upload"
     st.rerun()
@@ -663,20 +650,17 @@ if page == "Overview":
         if by_status.empty:
             st.info("No records in this date range.")
         else:
-            chart(ranked_bar(by_status, "_Status", "Portfolio"), "portfolio-by-status")
             render_chart(ranked_bar(by_status, "_Status", "Portfolio"))
 
     with loan_amount_panel, panel("loan-amount-bands"):
         st.subheader("Loan amount bands")
         loan_amount_chart(data)
     with panel("top-banks"):
-        st.subheader("Top banks")
         rows = summary(data, "_Bank").head(8)
         if rows.empty:
             st.subheader("Top banks")
             st.info("No data to display.")
         else:
-            chart(ranked_bar(rows, "_Bank"), "top-banks", height=270, top_margin=8)
             fig = ranked_bar(rows, "_Bank")
             fig.update_layout(
                 title=dict(
@@ -703,11 +687,9 @@ elif page in ["Loan Types", "Banks", "Executives"]:
         elif rows.empty:
             st.info("No data to display.")
         else:
-            chart(ranked_bar(rows.head(20), dimension), "application-breakdown")
             render_chart(ranked_bar(rows.head(20), dimension))
     with totals_column, panel("breakdown-table"):
         st.subheader(f"{label} totals")
-        st.dataframe(rows.rename(columns={dimension: label}), use_container_width=True, hide_index=True)
         st.dataframe(rows.rename(columns={dimension: label}), width="stretch", hide_index=True)
 elif page == "Records":
     with panel("records"):
@@ -717,7 +699,6 @@ elif page == "Records":
             mask = display.astype(str).apply(lambda col: col.str.contains(search, case=False, regex=False, na=False)).any(axis=1)
             display = display[mask]
         st.caption(f"{len(display):,} matching records")
-        st.dataframe(display, use_container_width=True, hide_index=True)
         st.dataframe(display, width="stretch", hide_index=True)
         st.download_button("Download CSV", display.to_csv(index=False).encode("utf-8-sig"), file_name="loan_records.csv", mime="text/csv")
 elif page == "KPI Metrics":
@@ -728,5 +709,4 @@ elif page == "KPI Metrics":
     c.metric("Total Portfolio", money(data["_Amount"].sum()))
     with panel("kpi-table"):
         st.subheader("Application totals")
-        st.dataframe(pd.DataFrame({"Metric": ["Total Applications", "Disbursed", "Pending"], "Count": [total, int(disbursed.sum()), int(pending.sum())]}), hide_index=True, use_container_width=True)
         st.dataframe(pd.DataFrame({"Metric": ["Total Applications", "Disbursed", "Pending"], "Count": [total, int(disbursed.sum()), int(pending.sum())]}), hide_index=True, width="stretch")
