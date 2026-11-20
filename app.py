@@ -13,9 +13,9 @@ GROUND = "#0d2018"
 PANEL = "#142a20"
 TEXT = "#f2f7eb"
 MUTED = "#adc4af"
-LINE = "#345442"
 ACCENT = "#dbf894"
 CHART_SURFACE = "#101c16"
+CHART_GRID = "#293a32"
 CHART_SAGE = "#b8cbbd"
 CHART_MUTED_SAGE = "#819689"
 STATUS_RING_COLORS = ("#52665a", "#677e72", CHART_MUTED_SAGE, "#4a655b", "#75897c")
@@ -169,7 +169,7 @@ st.html(
         border: 1px solid var(--line);
         border-radius: 8px;
     }
-    :is(.st-key-portfolio-panel-trend, .st-key-portfolio-panel-status) [data-testid="stPlotlyChart"] {
+    .stApp [data-testid="stPlotlyChart"] {
         background: #101c16;
         border: 1px solid #23352b;
         border-radius: 10px;
@@ -280,7 +280,7 @@ def panel(name):
     return st.container(border=True, key=f"portfolio-panel-{name}")
 
 
-def chart(fig, name, height=296, *, grid_color=LINE):
+def chart(fig, name, height=296):
     fig.update_layout(
         template="plotly_dark",
         height=height,
@@ -290,8 +290,8 @@ def chart(fig, name, height=296, *, grid_color=LINE):
         font=dict(color=TEXT, size=13),
         hoverlabel=dict(bgcolor=GROUND, bordercolor=ACCENT, font_color=TEXT),
     )
-    fig.update_xaxes(gridcolor=grid_color, zerolinecolor=grid_color, tickfont=dict(color=MUTED), automargin=True)
-    fig.update_yaxes(gridcolor=grid_color, zerolinecolor=grid_color, tickfont=dict(color=MUTED), automargin=True)
+    fig.update_xaxes(gridcolor=CHART_GRID, zerolinecolor=CHART_GRID, tickfont=dict(color=MUTED), automargin=True)
+    fig.update_yaxes(gridcolor=CHART_GRID, zerolinecolor=CHART_GRID, tickfont=dict(color=MUTED), automargin=True)
     st.plotly_chart(
         fig,
         key=name,
@@ -311,7 +311,7 @@ def ranked_bar(rows, dimension, measure="Applications"):
         x=measure,
         y=dimension,
         orientation="h",
-        color_discrete_sequence=["#80bc82"],
+        color_discrete_sequence=[CHART_SAGE],
         custom_data=["Amount", "Applications"],
     )
     fig.update_traces(
@@ -484,7 +484,7 @@ def monthly_trend(data):
         dtick="M1" if not has_comparison else None,
     )
     fig.update_yaxes(title=None, showgrid=True, rangemode="tozero", **tick_options)
-    chart(fig, "monthly-portfolio-trend", height=258, grid_color="#293a32")
+    chart(fig, "monthly-portfolio-trend", height=258)
 
 
 def status_chart(data):
