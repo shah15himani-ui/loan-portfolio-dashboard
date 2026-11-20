@@ -5,6 +5,7 @@ from random import Random
 
 import pandas as pd
 import plotly.express as px
+import plotly.graph_objects as go
 import streamlit as st
 from streamlit import config
 
@@ -166,6 +167,11 @@ st.html(
         border: 1px solid var(--line);
         border-radius: 8px;
     }
+    .st-key-portfolio-panel-trend [data-testid="stPlotlyChart"] {
+        background: #101c16;
+        border: 1px solid #23352b;
+        border-radius: 10px;
+    }
     .stApp .st-key-status_focus { max-width: 14rem; margin-inline: auto; }
     .stApp .st-key-status_focus [data-baseweb="select"] > div { border-radius: 999px; }
     .loan-type-message {
@@ -267,7 +273,7 @@ def panel(name):
     return st.container(border=True, key=f"portfolio-panel-{name}")
 
 
-def chart(fig, name, height=296):
+def chart(fig, name, height=296, *, grid_color=LINE):
     fig.update_layout(
         template="plotly_dark",
         height=height,
@@ -275,11 +281,10 @@ def chart(fig, name, height=296):
         paper_bgcolor="rgba(0,0,0,0)",
         plot_bgcolor="rgba(0,0,0,0)",
         font=dict(color=TEXT, size=13),
-        legend=dict(orientation="h", x=0.5, xanchor="center", y=-0.08, yanchor="top"),
         hoverlabel=dict(bgcolor=GROUND, bordercolor=ACCENT, font_color=TEXT),
     )
-    fig.update_xaxes(gridcolor=LINE, zerolinecolor=LINE, tickfont=dict(color=MUTED), automargin=True)
-    fig.update_yaxes(gridcolor=LINE, zerolinecolor=LINE, tickfont=dict(color=MUTED), automargin=True)
+    fig.update_xaxes(gridcolor=grid_color, zerolinecolor=grid_color, tickfont=dict(color=MUTED), automargin=True)
+    fig.update_yaxes(gridcolor=grid_color, zerolinecolor=grid_color, tickfont=dict(color=MUTED), automargin=True)
     st.plotly_chart(
         fig,
         key=name,
@@ -418,30 +423,61 @@ def monthly_trend(data):
     monthly = summary(dated, "Month").sort_values("Month")
     if measure == "Portfolio value":
         column, tick_options = "Portfolio", {"tickprefix": "₹"}
-        monthly["Hover value"] = monthly[column].map(money)
+        hover_values = monthly[column].map(money)
     else:
         column, tick_options = "Applications", {"tickformat": ",d"}
-        monthly["Hover value"] = monthly[column].map(lambda value: f"{value:,} applications")
+        hover_values = monthly[column].map(lambda value: f"{value:,} applications")
+        if monthly[column].max() <= 5:
+            tick_options["dtick"] = 1
 
-    fig = px.area(monthly, x="Month", y=column, markers=True, custom_data=["Hover value"])
-    fig.update_traces(
-        fillcolor="rgba(219,248,148,0.15)",
-        line=dict(color=ACCENT, width=3),
-        marker=dict(size=8, color=ACCENT, line=dict(color=PANEL, width=1.5)),
-        hovertemplate="<b>%{x|%b %Y}</b><br>%{customdata[0]}<extra></extra>",
+    has_comparison = len(monthly) > 1
+    fig = go.Figure(go.Scatter(
+        x=monthly["Month"],
+        y=monthly[column],
+        name=measure,
+        mode="lines" if has_comparison else "markers",
+        line=dict(color="#b8cbbd", width=1.8, shape="spline", smoothing=.75),
+        marker=dict(size=7, color="#b8cbbd"),
+        fill="tozeroy" if has_comparison else None,
+        fillgradient=dict(
+            type="vertical",
+            colorscale=[[0, "rgba(184,203,189,0.02)"], [1, "rgba(184,203,189,0.17)"]],
+        ),
+        customdata=hover_values,
+        hovertemplate="Monthly: %{customdata}<extra></extra>",
+    ))
+    if has_comparison:
+        # Keep the three-calendar-month window even when a month has no records.
+        values = monthly.set_index("Month")[column].asfreq("MS")
+        average = values.rolling(3, min_periods=1).mean().reindex(monthly["Month"])
+        average_hover = average.map(money if measure == "Portfolio value" else lambda value: f"{value:,.1f} applications")
+        fig.add_scatter(
+            x=monthly["Month"],
+            y=average,
+            name="3-month average",
+            mode="lines",
+            line=dict(color="#819689", width=1.4, dash="dot", shape="spline", smoothing=.75),
+            customdata=average_hover,
+            hovertemplate="3-month average: %{customdata}<extra></extra>",
+        )
+    fig.update_layout(
+        hovermode="x unified",
+        hoverdistance=-1,
+        showlegend=has_comparison,
+        legend=dict(orientation="h", x=0, xanchor="left", y=1.025, yanchor="bottom", font=dict(size=11)),
     )
-    fig.update_layout(hovermode="x")
     month_padding = pd.Timedelta(days=9)
     first_month, last_month = monthly["Month"].iloc[0], monthly["Month"].iloc[-1]
     fig.update_xaxes(
         title=None,
-        tickformat="%b %y",
-        showgrid=False,
+        tickformat="%b" if first_month.year == last_month.year else "%b %y",
+        hoverformat="%b %Y",
+        showgrid=True,
         range=[first_month - month_padding, last_month + month_padding],
-        dtick="M1" if first_month == last_month else None,
+        dtick="M1" if not has_comparison else None,
     )
-    fig.update_yaxes(title=None, rangemode="tozero", **tick_options)
-    chart(fig, "monthly-portfolio-trend", height=258)
+    fig.update_yaxes(title=None, showgrid=True, rangemode="tozero", **tick_options)
+    chart(fig, "monthly-portfolio-trend", height=258, grid_color="#293a32")
 
 
 def status_chart(data):
