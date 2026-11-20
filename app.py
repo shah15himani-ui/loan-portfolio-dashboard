@@ -176,11 +176,15 @@ st.html(
         border-radius: 10px;
     }
     .stApp [class*="st-key-portfolio-panel-"]:has(> [data-testid="stElementContainer"] [data-testid="stPlotlyChart"]) {
+    .stApp [class*="st-key-portfolio-panel-"]:not(.st-key-portfolio-panel-top-banks):has(> [data-testid="stElementContainer"] [data-testid="stPlotlyChart"]) {
         min-height: 29rem;
     }
     .stApp [class*="st-key-portfolio-panel-"] > [data-testid="stElementContainer"]:has([data-testid="stPlotlyChart"]) {
+    .stApp [class*="st-key-portfolio-panel-"]:not(.st-key-portfolio-panel-top-banks) > [data-testid="stElementContainer"]:has([data-testid="stPlotlyChart"]) {
         margin-top: auto;
     }
+    .stApp .st-key-portfolio-panel-top-banks { row-gap: .375rem; }
+    .stApp .st-key-portfolio-panel-top-banks h3 { padding-bottom: 0; }
     .stApp .st-key-status_focus { max-width: 14rem; margin-inline: auto; }
     .stApp .st-key-status_focus [data-baseweb="select"] > div {
         background: #101c16;
@@ -288,10 +292,12 @@ def panel(name):
 
 
 def chart(fig, name, *, height=CHART_HEIGHT):
+def chart(fig, name, *, height=CHART_HEIGHT, top_margin=18):
     fig.update_layout(
         template="plotly_dark",
         height=height,
         margin=dict(l=12, r=18, t=18, b=22),
+        margin=dict(l=12, r=18, t=top_margin, b=22),
         paper_bgcolor="rgba(0,0,0,0)",
         plot_bgcolor="rgba(0,0,0,0)",
         font=dict(color=TEXT, size=13),
@@ -663,6 +669,7 @@ if page == "Overview":
             st.info("No data to display.")
         else:
             chart(ranked_bar(rows, "_Bank"), "top-banks", height=270)
+            chart(ranked_bar(rows, "_Bank"), "top-banks", height=270, top_margin=8)
 elif page in ["Loan Types", "Banks", "Executives"]:
     dimension, label = {"Loan Types": ("_LoanType", "Loan type"), "Banks": ("_Bank", "Bank"), "Executives": ("_Executive", "Executive")}[page]
     rows = summary(data, dimension)
