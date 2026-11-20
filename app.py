@@ -662,9 +662,25 @@ if page == "Overview":
         st.subheader("Top banks")
         rows = summary(data, "_Bank").head(8)
         if rows.empty:
+            st.subheader("Top banks")
             st.info("No data to display.")
         else:
             chart(ranked_bar(rows, "_Bank"), "top-banks", height=270, top_margin=8)
+            fig = ranked_bar(rows, "_Bank")
+            fig.update_layout(
+                title=dict(
+                    text="<b>Top banks</b>",
+                    x=0,
+                    y=1,
+                    xref="container",
+                    yref="container",
+                    xanchor="left",
+                    yanchor="top",
+                    pad=dict(l=12, t=10),
+                    font=dict(size=16),
+                ),
+            )
+            chart(fig, "top-banks", height=270, top_margin=38)
 elif page in ["Loan Types", "Banks", "Executives"]:
     dimension, label = {"Loan Types": ("_LoanType", "Loan type"), "Banks": ("_Bank", "Bank"), "Executives": ("_Executive", "Executive")}[page]
     rows = summary(data, dimension)
